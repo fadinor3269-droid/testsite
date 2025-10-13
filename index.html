@@ -8,6 +8,7 @@
         /* Стиль "под IOS" */
         :root {
             --ios-blue: #007AFF;
+            --ios-red: #FF3B30;
             --ios-gray-bg: #F4F4F4;
             --ios-light-gray-text: #8E8E93;
             --ios-separator: #C6C6C8;
@@ -91,6 +92,12 @@
         .primary-button:active {
             background-color: #0056b3;
         }
+        
+        /* Стиль для кнопки-заглушки */
+        .locked-button {
+            background-color: var(--ios-light-gray-text);
+            cursor: not-allowed;
+        }
 
         /* Форма-опросник */
         .form-group {
@@ -114,7 +121,7 @@
             font-size: 16px;
             background-color: var(--ios-input-bg);
             transition: border-color 0.2s;
-            -webkit-appearance: none; /* Скрытие стандартных стилей в Safari */
+            -webkit-appearance: none;
         }
 
         input[type="text"]:focus, textarea:focus {
@@ -200,9 +207,29 @@
         }
 
         /* Секция 2 (Форма) */
-        #form-section {
+        #form-section, #limit-reached-section {
             display: none;
         }
+        
+        /* Секция с ограничением */
+        #limit-reached-section {
+            background-color: #FFF0F0;
+            border: 1px solid var(--ios-red);
+            color: var(--ios-red);
+            text-align: center;
+            padding: 30px 20px;
+        }
+        #limit-reached-section h2 {
+            color: var(--ios-red);
+            font-size: 22px;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        #limit-reached-section p {
+            color: #1C1C1C;
+            line-height: 1.5;
+        }
+
 
         /* Уведомление */
         .notification {
@@ -260,9 +287,16 @@
 
             <button class="primary-button" onclick="showForm()">Связаться с менеджером</button>
         </div>
+        
+        <div id="limit-reached-section" class="section">
+            <h2>⛔ Лимит заявок исчерпан</h2>
+            <p>Вы уже отправили максимальное количество заявок (2) с этого устройства. Это ограничение установлено для борьбы со спамом. Если вы считаете, что это ошибка, пожалуйста, свяжитесь с нами по контактам, указанным в описании вакансии.</p>
+        </div>
+
 
         <div id="form-section" class="section">
             <h2>Расскажите о себе</h2>
+            <p style="font-size: 14px; color: var(--ios-light-gray-text);">Заявок с этого устройства: <span id="submission-counter">0</span> из 2</p>
             <form id="barista-form">
                 
                 <div class="form-group">
@@ -276,7 +310,7 @@
                         <input type="radio" id="experience-yes" name="experience" value="Да" required onclick="toggleExperienceDetail(true)">
                         <label for="experience-yes">Да</label>
 
-                        <input type="radio" id="experience-no" name="experience" value="Нет" required onclick="toggleExperienceDetail(false)" checked>
+                        <input type="radio" id="experience-no" name="experience" value="Нет" required onclick="toggleExperienceDetail(false)">
                         <label for="experience-no">Нет</label>
                     </div>
                 </div>
@@ -318,17 +352,37 @@
     <div class="notification" id="status-notification">Наш менеджер вскоре с вами свяжется</div>
 
     <script>
-        // Константы для Telegram API
+        // Константы для Telegram API и ограничения
         const BOT_TOKEN = '8081524419:AAGb74EUjZYRfNfWlhuAcm6CIUFkMx4_nTQ';
         const CHAT_ID = '7304258589';
+        const SUBMISSION_KEY = 'barista_submission_count';
+        const MAX_SUBMISSIONS = 2;
 
         /**
-         * Переключает отображение секций: превью -> форма.
+         * Переключает отображение секций: превью -> форма / лимит.
          */
         function showForm() {
-            document.getElementById('preview-section').style.display = 'none';
-            document.getElementById('form-section').style.display = 'block';
-            window.scrollTo(0, 0); // Прокрутка к началу формы
+            const count = parseInt(localStorage.getItem(SUBMISSION_KEY) || '0', 10);
+            const previewSection = document.getElementById('preview-section');
+            const formSection = document.getElementById('form-section');
+            const limitSection = document.getElementById('limit-reached-section');
+            const counterElement = document.getElementById('submission-counter');
+
+            // Обновляем счетчик для показа в форме
+            if (counterElement) {
+                 counterElement.textContent = count;
+            }
+
+            previewSection.style.display = 'none';
+
+            if (count >= MAX_SUBMISSIONS) {
+                formSection.style.display = 'none';
+                limitSection.style.display = 'block';
+            } else {
+                formSection.style.display = 'block';
+                limitSection.style.display = 'none';
+            }
+            window.scrollTo(0, 0); // Прокрутка к началу формы/сообщения
         }
 
         /**
@@ -357,18 +411,22 @@
                 case 'telegram':
                 case 'instagram':
                     prefix = '@';
+                    dataInput.placeholder = 'никнейм';
                     break;
                 case 'viber':
                 case 'phone':
                     prefix = '+380';
+                    dataInput.placeholder = 'XX XXX XX XX';
                     break;
                 default:
                     prefix = '';
+                    dataInput.placeholder = 'Ваш никнейм или номер';
             }
 
             prefixSpan.textContent = prefix;
             prefixSpan.style.display = prefix ? 'flex' : 'none';
 
+            // Управление стилями для отображения префикса
             if (prefix) {
                 inputGroup.classList.remove('no-prefix');
                 dataInput.style.borderTopLeftRadius = '0';
@@ -382,7 +440,6 @@
             }
             
             dataInput.value = ''; // Очистка поля при смене префикса
-            dataInput.placeholder = (method === 'phone' || method === 'viber') ? 'XX XXX XX XX' : 'никнейм';
         }
 
         /**
@@ -409,9 +466,9 @@
             const experienceDetail = formData.get('experience-detail') || '---';
             const contactMethod = formData.get('contact-method');
             let contactData = formData.get('contact-data');
-            const additionalInfo = formData.get('additional-info') || 'Нет';
+            const additionalInfo = formData.get('additional-info') || '---';
             
-            // Получаем префикс для корректного отображения
+            // Определяем префикс для форматирования сообщения
             let prefix = '';
             if (contactMethod === 'telegram' || contactMethod === 'instagram') {
                 prefix = '@';
@@ -419,11 +476,11 @@
                 prefix = '+380';
             }
 
-            // Добавляем префикс к контактным данным, если он отсутствует (на случай, если пользователь ввел его сам)
-            if (prefix && !contactData.startsWith(prefix) && contactData !== '') {
-                 contactData = prefix + contactData.replace(prefix, ''); // Избегаем двойного префикса
+            // Добавляем префикс, если он отсутствует и не пустой
+            if (prefix && contactData && !contactData.startsWith(prefix)) {
+                 contactData = prefix + contactData;
             }
-
+            
             // Формирование текста
             let text = `*НОВАЯ ЗАЯВКА НА ВАКАНСИЮ БАРИСТА* \n\n`;
             text += `*Имя:* ${name}\n`;
@@ -435,8 +492,8 @@
                 text += `*Опыт работы:* Нет опыта в этой сфере\n`;
             }
 
-            text += `*Связь:* ${contactMethod.charAt(0).toUpperCase() + contactMethod.slice(1)}: ${contactData}\n`;
-            text += `*Доп. инфо:* ${additionalInfo}`;
+            text += `*Связаться:* ${contactMethod.charAt(0).toUpperCase() + contactMethod.slice(1)}: ${contactData}\n`;
+            text += `*Доп инфо:* ${additionalInfo}`;
 
             return text;
         }
@@ -448,27 +505,36 @@
         async function handleSubmit(event) {
             event.preventDefault(); // Предотвращаем стандартную отправку формы
             
+            let count = parseInt(localStorage.getItem(SUBMISSION_KEY) || '0', 10);
+            
+            if (count >= MAX_SUBMISSIONS) {
+                showNotification("Превышен лимит заявок с этого устройства.");
+                return;
+            }
+
             const form = event.target;
             const formData = new FormData(form);
 
-            // Проверка обязательных полей (для input type="text" и select)
+            // Проверка обязательных полей
             let isValid = true;
             form.querySelectorAll('[required]').forEach(input => {
                 if (!input.value && input.type !== 'radio' && input.type !== 'checkbox') {
                     isValid = false;
-                    input.style.borderColor = 'red';
-                    // Может быть добавлена дополнительная логика для сообщений об ошибках
-                } else if (input.type === 'radio' && input.name === 'experience' && !form.querySelector('input[name="experience"]:checked')) {
-                     isValid = false; // Проверка, что выбран один из вариантов опыта
+                    input.style.borderColor = 'var(--ios-red)';
                 } else {
                     input.style.borderColor = 'var(--ios-separator)';
                 }
             });
             
             if (!isValid) {
-                showNotification("Пожалуйста, заполните все обязательные поля!");
+                showNotification("Пожалуйста, заполните все обязательные поля (*)");
                 return;
             }
+            
+            // Блокируем кнопку на время отправки
+            const submitButton = form.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Отправка...';
 
             // Отправка данных
             const messageText = formatTelegramMessage(formData);
@@ -492,29 +558,48 @@
                 const result = await response.json();
 
                 if (result.ok) {
+                    // УСПЕХ: Увеличиваем счетчик и сохраняем
+                    count++;
+                    localStorage.setItem(SUBMISSION_KEY, count.toString());
+
                     showNotification("Наш менеджер вскоре с вами свяжется");
-                    form.reset(); // Очистка формы после успешной отправки
-                    toggleExperienceDetail(false); // Скрываем детали опыта
-                    updateContactPrefix(''); // Сбрасываем префикс
-                    document.getElementById('form-section').style.display = 'none'; // Скрываем форму
-                    document.getElementById('preview-section').style.display = 'block'; // Показываем превью
+                    
+                    // Сбрасываем форму и возвращаемся к превью
+                    form.reset(); 
+                    document.getElementById('experience-no').checked = true; // Сброс радиокнопки
+                    toggleExperienceDetail(false); 
+                    updateContactPrefix(''); // Сброс префикса
+                    
+                    document.getElementById('form-section').style.display = 'none'; 
+                    document.getElementById('preview-section').style.display = 'block';
+                    
                 } else {
                     console.error('Ошибка Telegram API:', result);
-                    showNotification("Ошибка отправки! Попробуйте позже или свяжитесь другим способом.");
+                    showNotification("Ошибка отправки! Попробуйте позже.");
                 }
             } catch (error) {
                 console.error('Ошибка сети:', error);
                 showNotification("Ошибка сети! Проверьте подключение.");
+            } finally {
+                // Возвращаем кнопку в исходное состояние
+                submitButton.disabled = false;
+                submitButton.textContent = 'Отправить заявку';
             }
         }
 
-        // Инициализация: сброс префикса и добавление обработчика
+        // Инициализация
         document.addEventListener('DOMContentLoaded', () => {
-            updateContactPrefix(document.getElementById('contact-method').value);
             document.getElementById('barista-form').addEventListener('submit', handleSubmit);
-            // Устанавливаем начальное состояние для радиокнопок
+            // Устанавливаем начальное состояние
             document.getElementById('experience-no').checked = true;
             toggleExperienceDetail(false); 
+            updateContactPrefix(document.getElementById('contact-method').value); // Инициализация префикса
+            
+            // Обновляем счетчик при загрузке страницы
+            const count = parseInt(localStorage.getItem(SUBMISSION_KEY) || '0', 10);
+            if (document.getElementById('submission-counter')) {
+                 document.getElementById('submission-counter').textContent = count;
+            }
         });
 
     </script>
