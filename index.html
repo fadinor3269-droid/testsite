@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вакансия Бариста - Кофейня</title>
+    <style>
+        /* Стиль "под IOS" */
+        :root {
+            --ios-blue: #007AFF;
+            --ios-gray-bg: #F4F4F4;
+            --ios-light-gray-text: #8E8E93;
+            --ios-separator: #C6C6C8;
+            --ios-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+            --ios-input-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: var(--ios-font);
+            margin: 0;
+            padding: 0;
+            background-color: var(--ios-gray-bg);
+            color: #1C1C1C;
+            line-height: 1.4;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px 15px;
+        }
+
+        /* Общие стили для секций */
+        .section {
+            background-color: #FFFFFF;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        /* Стиль для заголовка */
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 0;
+            color: #000000;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #000000;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+
+        /* Стиль для списков */
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0 20px 0;
+        }
+
+        li {
+            padding: 5px 0;
+            border-bottom: 1px solid var(--ios-separator);
+        }
+
+        li:last-child {
+            border-bottom: none;
+        }
+
+        /* Стиль для кнопки */
+        .primary-button {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            background-color: var(--ios-blue);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 20px;
+        }
+
+        .primary-button:active {
+            background-color: #0056b3;
+        }
+
+        /* Форма-опросник */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 15px;
+            color: #000000;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--ios-separator);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background-color: var(--ios-input-bg);
+            transition: border-color 0.2s;
+            -webkit-appearance: none; /* Скрытие стандартных стилей в Safari */
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            border-color: var(--ios-blue);
+            outline: none;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Стиль для переключателей (Да/Нет) */
+        .radio-group {
+            display: flex;
+            gap: 10px;
+            background-color: #EFEFF4;
+            padding: 5px;
+            border-radius: 9px;
+        }
+        .radio-group label {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+            font-weight: 400;
+            font-size: 16px;
+            color: #000000;
+        }
+        .radio-group input[type="radio"] {
+            display: none;
+        }
+        .radio-group input[type="radio"]:checked + label {
+            background-color: var(--ios-input-bg);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            font-weight: 600;
+        }
+
+        /* Секция с префиксом для контакта */
+        .contact-input-group {
+            display: flex;
+        }
+        .contact-prefix {
+            padding: 10px;
+            background-color: #EFEFF4;
+            border: 1px solid var(--ios-separator);
+            border-right: none;
+            border-top-left-radius: 6px;
+            border-bottom-left-radius: 6px;
+            font-size: 16px;
+            color: var(--ios-light-gray-text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+        }
+        .contact-input-group input {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            border-left: none;
+        }
+        .no-prefix input {
+            border-radius: 6px;
+            border-left: 1px solid var(--ios-separator);
+        }
+
+        /* Стиль для селекта */
+        select {
+            -moz-appearance: none;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%238E8E93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
+        }
+
+        /* Секция 1 (Превью) */
+        #preview-section {
+            display: block;
+        }
+
+        /* Секция 2 (Форма) */
+        #form-section {
+            display: none;
+        }
+
+        /* Уведомление */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.85);
+            color: #FFFFFF;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 15px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .notification.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .required-asterisk {
+            color: var(--ios-blue);
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <div id="preview-section" class="section">
+            <h1>Вакансия бариста в нашей кофейне!</h1>
+            <p>Приглашаем в нашу дружную команду энергичного и улыбчивого бариста, который любит кофе так же сильно, как мы! Стань частью атмосферного места, где каждый день наполнен ароматом свежесваренного кофе и улыбками гостей.</p>
+
+            <h2>Что мы предлагаем:</h2>
+            <ul>
+                <li><strong>График работы:</strong> с 8:00 до 16:00, 6 дней в неделю — идеально для тех, кто ценит стабильность и свободные вечера.</li>
+                <li><strong>Зарплата:</strong> фиксированная ставка + процент от кассы, чтобы твой труд всегда был щедро вознагражден.</li>
+                <li><strong>Премии и бонусы:</strong> дополнительные поощрения за отличную работу и вклад в успех кофейни.</li>
+                <li><strong>Оплачиваемый проезд:</strong> добирайся до работы и домой с комфортом за наш счёт.</li>
+                <li><strong>Тёплая атмосфера:</strong> дружелюбный коллектив, поддержка и возможность расти в профессии.</li>
+            </ul>
+
+            <h2>Что мы ждём от тебя:</h2>
+            <ul>
+                <li>Умение варить вкусный кофе и создавать уют для гостей.</li>
+                <li>Позитивный настрой и желание учиться новому.</li>
+                <li>Ответственность и любовь к своему делу.</li>
+            </ul>
+
+            <p>Если ты мечтаешь работать в месте, где ценят твою энергию и страсть к кофе, присоединяйся! Напиши нам или приходи на собеседование — мы ждём именно тебя!</p>
+
+            <button class="primary-button" onclick="showForm()">Связаться с менеджером</button>
+        </div>
+
+        <div id="form-section" class="section">
+            <h2>Расскажите о себе</h2>
+            <form id="barista-form">
+                
+                <div class="form-group">
+                    <label for="name">Как к вам обращаться? <span class="required-asterisk">*</span></label>
+                    <input type="text" id="name" name="name" required placeholder="Имя и Фамилия">
+                </div>
+
+                <div class="form-group">
+                    <label>Есть ли опыт работы в этой или похожей сфере? <span class="required-asterisk">*</span></label>
+                    <div class="radio-group">
+                        <input type="radio" id="experience-yes" name="experience" value="Да" required onclick="toggleExperienceDetail(true)">
+                        <label for="experience-yes">Да</label>
+
+                        <input type="radio" id="experience-no" name="experience" value="Нет" required onclick="toggleExperienceDetail(false)" checked>
+                        <label for="experience-no">Нет</label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="experience-detail-group" style="display:none;">
+                    <label for="experience-detail">Какой опыт имеется? <span class="required-asterisk">*</span></label>
+                    <textarea id="experience-detail" name="experience-detail" placeholder="Опишите ваш опыт бариста, в общепите, или в сфере обслуживания"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="contact-method">Как с вами связаться? <span class="required-asterisk">*</span></label>
+                    <select id="contact-method" name="contact-method" required onchange="updateContactPrefix(this.value)">
+                        <option value="" disabled selected>Выберите способ связи</option>
+                        <option value="telegram">Telegram</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="viber">Viber</option>
+                        <option value="phone">Номер телефона</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="contact-data">Ваши контактные данные <span class="required-asterisk">*</span></label>
+                    <div class="contact-input-group" id="contact-input-group">
+                        <span class="contact-prefix" id="contact-prefix" style="display: none;"></span>
+                        <input type="text" id="contact-data" name="contact-data" required placeholder="Ваш никнейм или номер">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="additional-info">Дополнительная информация (необязательно)</label>
+                    <textarea id="additional-info" name="additional-info" placeholder="Например, почему вы хотите работать у нас, или ваши пожелания по работе"></textarea>
+                </div>
+
+                <button type="submit" class="primary-button">Отправить заявку</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="notification" id="status-notification">Наш менеджер вскоре с вами свяжется</div>
+
+    <script>
+        // Константы для Telegram API
+        const BOT_TOKEN = '8081524419:AAGb74EUjZYRfNfWlhuAcm6CIUFkMx4_nTQ';
+        const CHAT_ID = '7304258589';
+
+        /**
+         * Переключает отображение секций: превью -> форма.
+         */
+        function showForm() {
+            document.getElementById('preview-section').style.display = 'none';
+            document.getElementById('form-section').style.display = 'block';
+            window.scrollTo(0, 0); // Прокрутка к началу формы
+        }
+
+        /**
+         * Показывает/скрывает поле "Какой опыт имеется?".
+         * @param {boolean} show - true для показа, false для скрытия.
+         */
+        function toggleExperienceDetail(show) {
+            const detailGroup = document.getElementById('experience-detail-group');
+            const detailInput = document.getElementById('experience-detail');
+            detailGroup.style.display = show ? 'block' : 'none';
+            detailInput.required = show; // Делаем поле обязательным, если опыт выбран "Да"
+        }
+
+        /**
+         * Обновляет префикс для контактных данных в зависимости от выбранного способа.
+         * @param {string} method - Выбранный способ связи.
+         */
+        function updateContactPrefix(method) {
+            const prefixSpan = document.getElementById('contact-prefix');
+            const dataInput = document.getElementById('contact-data');
+            const inputGroup = document.getElementById('contact-input-group');
+
+            let prefix = '';
+
+            switch (method) {
+                case 'telegram':
+                case 'instagram':
+                    prefix = '@';
+                    break;
+                case 'viber':
+                case 'phone':
+                    prefix = '+380';
+                    break;
+                default:
+                    prefix = '';
+            }
+
+            prefixSpan.textContent = prefix;
+            prefixSpan.style.display = prefix ? 'flex' : 'none';
+
+            if (prefix) {
+                inputGroup.classList.remove('no-prefix');
+                dataInput.style.borderTopLeftRadius = '0';
+                dataInput.style.borderBottomLeftRadius = '0';
+                dataInput.style.borderLeft = 'none';
+            } else {
+                inputGroup.classList.add('no-prefix');
+                dataInput.style.borderTopLeftRadius = '6px';
+                dataInput.style.borderBottomLeftRadius = '6px';
+                dataInput.style.borderLeft = '1px solid var(--ios-separator)';
+            }
+            
+            dataInput.value = ''; // Очистка поля при смене префикса
+            dataInput.placeholder = (method === 'phone' || method === 'viber') ? 'XX XXX XX XX' : 'никнейм';
+        }
+
+        /**
+         * Показывает встроенное уведомление.
+         * @param {string} message - Текст уведомления.
+         */
+        function showNotification(message) {
+            const notification = document.getElementById('status-notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        /**
+         * Форматирует данные формы в сообщение для Telegram.
+         * @param {FormData} formData - Объект FormData с данными формы.
+         * @returns {string} - Отформатированный текст сообщения.
+         */
+        function formatTelegramMessage(formData) {
+            const name = formData.get('name');
+            const experience = formData.get('experience');
+            const experienceDetail = formData.get('experience-detail') || '---';
+            const contactMethod = formData.get('contact-method');
+            let contactData = formData.get('contact-data');
+            const additionalInfo = formData.get('additional-info') || 'Нет';
+            
+            // Получаем префикс для корректного отображения
+            let prefix = '';
+            if (contactMethod === 'telegram' || contactMethod === 'instagram') {
+                prefix = '@';
+            } else if (contactMethod === 'viber' || contactMethod === 'phone') {
+                prefix = '+380';
+            }
+
+            // Добавляем префикс к контактным данным, если он отсутствует (на случай, если пользователь ввел его сам)
+            if (prefix && !contactData.startsWith(prefix) && contactData !== '') {
+                 contactData = prefix + contactData.replace(prefix, ''); // Избегаем двойного префикса
+            }
+
+            // Формирование текста
+            let text = `*НОВАЯ ЗАЯВКА НА ВАКАНСИЮ БАРИСТА* \n\n`;
+            text += `*Имя:* ${name}\n`;
+            
+            if (experience === 'Да') {
+                text += `*Опыт работы:* Есть\n`;
+                text += `--- ${experienceDetail}\n`;
+            } else {
+                text += `*Опыт работы:* Нет опыта в этой сфере\n`;
+            }
+
+            text += `*Связь:* ${contactMethod.charAt(0).toUpperCase() + contactMethod.slice(1)}: ${contactData}\n`;
+            text += `*Доп. инфо:* ${additionalInfo}`;
+
+            return text;
+        }
+
+        /**
+         * Обрабатывает отправку формы.
+         * @param {Event} event - Событие отправки формы.
+         */
+        async function handleSubmit(event) {
+            event.preventDefault(); // Предотвращаем стандартную отправку формы
+            
+            const form = event.target;
+            const formData = new FormData(form);
+
+            // Проверка обязательных полей (для input type="text" и select)
+            let isValid = true;
+            form.querySelectorAll('[required]').forEach(input => {
+                if (!input.value && input.type !== 'radio' && input.type !== 'checkbox') {
+                    isValid = false;
+                    input.style.borderColor = 'red';
+                    // Может быть добавлена дополнительная логика для сообщений об ошибках
+                } else if (input.type === 'radio' && input.name === 'experience' && !form.querySelector('input[name="experience"]:checked')) {
+                     isValid = false; // Проверка, что выбран один из вариантов опыта
+                } else {
+                    input.style.borderColor = 'var(--ios-separator)';
+                }
+            });
+            
+            if (!isValid) {
+                showNotification("Пожалуйста, заполните все обязательные поля!");
+                return;
+            }
+
+            // Отправка данных
+            const messageText = formatTelegramMessage(formData);
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
+            const data = new URLSearchParams({
+                chat_id: CHAT_ID,
+                text: messageText,
+                parse_mode: 'Markdown'
+            });
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: data
+                });
+
+                const result = await response.json();
+
+                if (result.ok) {
+                    showNotification("Наш менеджер вскоре с вами свяжется");
+                    form.reset(); // Очистка формы после успешной отправки
+                    toggleExperienceDetail(false); // Скрываем детали опыта
+                    updateContactPrefix(''); // Сбрасываем префикс
+                    document.getElementById('form-section').style.display = 'none'; // Скрываем форму
+                    document.getElementById('preview-section').style.display = 'block'; // Показываем превью
+                } else {
+                    console.error('Ошибка Telegram API:', result);
+                    showNotification("Ошибка отправки! Попробуйте позже или свяжитесь другим способом.");
+                }
+            } catch (error) {
+                console.error('Ошибка сети:', error);
+                showNotification("Ошибка сети! Проверьте подключение.");
+            }
+        }
+
+        // Инициализация: сброс префикса и добавление обработчика
+        document.addEventListener('DOMContentLoaded', () => {
+            updateContactPrefix(document.getElementById('contact-method').value);
+            document.getElementById('barista-form').addEventListener('submit', handleSubmit);
+            // Устанавливаем начальное состояние для радиокнопок
+            document.getElementById('experience-no').checked = true;
+            toggleExperienceDetail(false); 
+        });
+
+    </script>
+</body>
+</html>
