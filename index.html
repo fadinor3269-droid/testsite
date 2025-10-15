@@ -144,6 +144,16 @@
                         texture.minFilter = THREE.NearestFilter;
                         texturesLoaded[key] = new THREE.MeshLambertMaterial({ map: texture });
                         resolve();
+                    }, undefined, (error) => {
+                        // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Fallback-материал при ошибке загрузки
+                        console.error('Failed to load texture:', url, error);
+                        let fallbackColor = 0x888888; // Серый по умолчанию
+                        if (key === 'water') fallbackColor = 0x0066ff;
+                        if (key === 'leaves') fallbackColor = 0x00cc00;
+                        if (key === 'wood') fallbackColor = 0x8b4513;
+
+                        texturesLoaded[key] = new THREE.MeshLambertMaterial({ color: fallbackColor });
+                        resolve(); // Разрешаем промис, чтобы игра продолжила загрузку
                     });
                 });
                 promises.push(promise);
@@ -220,7 +230,8 @@
          */
         function addBlock(group, x, y, z, materialKey) {
             const geometry = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-            const material = texturesLoaded[materialKey] || new THREE.MeshBasicMaterial({ color: 0xcccccc }); // Fallback
+            // Используем уже загруженный или резервный материал
+            const material = texturesLoaded[materialKey]; 
             const mesh = new THREE.Mesh(geometry, material);
             mesh.position.set(x + BLOCK_SIZE / 2, y + BLOCK_SIZE / 2, z + BLOCK_SIZE / 2);
             group.add(mesh);
@@ -242,8 +253,6 @@
             for (let dx = -1; dx <= 1; dx++) {
                 for (let dy = 0; dy <= 2; dy++) {
                     for (let dz = -1; dz <= 1; dz++) {
-                        // Исключаем углы для более естественной формы, если нужно.
-                        // Пока сделаем простой куб для минималок
                         addBlock(group, (x + dx) * BLOCK_SIZE, (crownYStart + dy) * BLOCK_SIZE, (z + dz) * BLOCK_SIZE, 'leaves');
                     }
                 }
@@ -264,6 +273,9 @@
         // === 4. Инициализация Сцены и Рендеринга ===
 
         function init() {
+            // Если сцена уже инициализирована, просто выходим
+            if (scene) return;
+
             // 1. Сцена
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87CEEB); // Голубое небо
@@ -293,6 +305,11 @@
                 generateInitialWorld();
                 animate();
                 controlsEnabled = true;
+
+                // Явно показываем элементы управления после успешной инициализации мира
+                document.getElementById('controls').style.display = 'block';
+                document.getElementById('jump-button').style.display = 'block';
+                console.log('Игра успешно запущена, мир сгенерирован.');
             });
         }
 
@@ -304,13 +321,7 @@
         function checkCollision() {
             const playerX = Math.floor(camera.position.x / BLOCK_SIZE);
             const playerZ = Math.floor(camera.position.z / BLOCK_SIZE);
-            const chunkX = Math.floor(playerX / CHUNK_SIZE);
-            const chunkZ = Math.floor(playerZ / CHUNK_SIZE);
-            const localX = playerX % CHUNK_SIZE;
-            const localZ = playerZ % CHUNK_SIZE;
-
-            // В этом минималистичном примере мы не храним массив блоков в чанке,
-            // поэтому просто используем генератор для имитации высоты земли.
+            
             const groundHeight = getHeight(playerX, playerZ);
             const targetY = groundHeight * BLOCK_SIZE + BLOCK_SIZE; // Позиция ног на поверхности
 
@@ -396,6 +407,7 @@
             const controls = document.getElementById('controls');
             const jumpButton = document.getElementById('jump-button');
 
+            // 1. Проверка на ПК
             if (!isMobile()) {
                 pcWarning.style.display = 'block';
                 return;
@@ -403,20 +415,25 @@
                 pcWarning.style.display = 'none';
             }
 
+            // 2. Проверка ориентации
             if (isPortrait) {
+                // Портретный режим: показываем предупреждение и скрываем всё
                 orientationWarning.style.display = 'block';
-                renderer.domElement.style.display = 'none';
+                if (renderer) renderer.domElement.style.display = 'none';
                 controls.style.display = 'none';
                 jumpButton.style.display = 'none';
             } else {
+                // Ландшафтный режим: скрываем предупреждение и инициализируем игру
                 orientationWarning.style.display = 'none';
-                renderer.domElement.style.display = 'block';
-                controls.style.display = 'block';
-                jumpButton.style.display = 'block';
+                if (renderer) renderer.domElement.style.display = 'block';
+                
                 if (!scene) {
                     init();
                 }
-                onWindowResize(); // Обновление размера после скрытия предупреждения
+
+                // ВАЖНО: Элементы управления будут показаны в init() после загрузки мира
+                
+                onWindowResize(); // Обновление размера
             }
         }
 
@@ -425,23 +442,21 @@
         window.addEventListener('orientationchange', checkDeviceAndOrientation);
         window.addEventListener('resize', checkDeviceAndOrientation);
 
+
         function onWindowResize() {
             if (!renderer) return;
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
-        window.addEventListener('resize', onWindowResize);
-
 
         // === 7.2. Полноэкранный режим по Тапу ===
 
         function enterFullscreen() {
+            if (document.fullscreenElement) return; // Уже в полноэкранном режиме
             const element = document.documentElement;
             if (element.requestFullscreen) {
                 element.requestFullscreen();
-            } else if (element.mozRequestFullScreen) { // Firefox
-                element.mozRequestFullScreen();
             } else if (element.webkitRequestFullscreen) { // Chrome, Safari and Opera
                 element.webkitRequestFullscreen();
             } else if (element.msRequestFullscreen) { // IE/Edge
@@ -455,12 +470,11 @@
             if (controlsEnabled && !event.target.classList.contains('dir-button') && event.target.id !== 'jump-button') {
                 enterFullscreen();
             }
-        }, { once: true });
+        });
 
 
         // === 7.3. Обработка Управления (Джойстик) ===
 
-        // Функция-помощник для обработки событий тача
         function setupTouchControl(id, action) {
             const element = document.getElementById(id);
 
@@ -473,9 +487,13 @@
                 e.preventDefault();
                 isMoving[action] = false;
             }, false);
+            // Добавим touchcancel на случай, если палец соскочил с кнопки
+            element.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                isMoving[action] = false;
+            }, false);
         }
 
-        // Настройка всех кнопок
         setupTouchControl('move-forward', 'forward');
         setupTouchControl('move-backward', 'backward');
         setupTouchControl('move-left', 'left');
@@ -491,7 +509,7 @@
         function onTouchStart(event) {
             if (!controlsEnabled || event.touches.length !== 1) return;
             // Игнорируем нажатия на кнопки управления
-            if (event.target.classList.contains('dir-button') || event.target.id === 'jump-button') return;
+            if (event.target.classList.contains('dir-button') || event.target.id === 'jump-button' || event.target.id === 'controls') return;
 
             startX = event.touches[0].clientX;
             startY = event.touches[0].clientY;
@@ -512,7 +530,6 @@
             camera.rotation.y -= deltaX * ROTATION_SENSITIVITY;
 
             // Вертикальное вращение (Pitch)
-            // Ограничиваем вращение по X, чтобы не смотреть "под себя" или "за спину"
             let rotationX = camera.rotation.x + deltaY * ROTATION_SENSITIVITY;
             rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotationX)); // Ограничение до 90 градусов
             camera.rotation.x = rotationX;
@@ -528,7 +545,8 @@
 
         document.addEventListener('touchstart', onTouchStart, false);
 
-        // Конец кода
+        // Конец кода: запускаем первичную проверку
+        checkDeviceAndOrientation();
     </script>
 </body>
 </html>
