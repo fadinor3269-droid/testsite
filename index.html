@@ -1,549 +1,329 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Minecraft Lite Mobile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Mini Minecraft-like Game</title>
     <style>
-        /* Стиль для предотвращения выделения и скролла на мобильных */
-        body { margin: 0; overflow: hidden; background-color: #00BFFF; touch-action: none; }
-        canvas { display: block; }
-
-        /* Предупреждения */
-        #orientation-warning, #pc-warning {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            color: white;
-            text-align: center;
-            padding-top: 50vh;
-            font-size: 20px;
-            z-index: 1000;
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
         }
-        #orientation-warning { background-color: rgba(0, 0, 0, 0.9); }
-        #pc-warning { background-color: rgba(255, 0, 0, 0.9); font-size: 24px; }
-        
-        /* Mobile Controls */
-        #controls {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            z-index: 50;
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+        #orientation-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 20px;
+            color: white;
+            background: black;
+            padding: 20px;
             display: none;
-            user-select: none;
+        }
+        #joystick {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            touch-action: none;
         }
         #jump-button {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 50;
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
             width: 80px;
             height: 80px;
+            background: rgba(255, 255, 255, 0.5);
             border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.5);
-            color: black;
-            font-size: 30px;
-            border: 2px solid white;
             text-align: center;
             line-height: 80px;
-            user-select: none;
-            display: none;
+            font-size: 20px;
+            touch-action: none;
         }
-        .dir-button {
-            width: 60px;
-            height: 60px;
-            margin: 5px;
-            background-color: rgba(255, 255, 255, 0.5);
-            border-radius: 10px;
-            text-align: center;
-            line-height: 60px;
-            font-size: 24px;
-            user-select: none;
-            display: inline-block;
-        }
-        #controls div {
-            text-align: center;
-        }
-        #controls #move-forward { margin-left: 75px; }
-        #controls #move-left { margin-right: 15px; }
-        #controls #move-backward { margin-left: 75px; }
-
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://threejs.org/build/three.min.js"></script>
 </head>
 <body>
-    <div id="orientation-warning">
-        Пожалуйста, поверните ваше устройство горизонтально (ландшафтный режим).
-    </div>
-    <div id="pc-warning">
-        Игра предназначена только для мобильных устройств.
-    </div>
-
-    <div id="controls">
-        <div id="move-forward" class="dir-button">⬆️</div>
-        <div>
-            <div id="move-left" class="dir-button">⬅️</div>
-            <div id="move-right" class="dir-button">➡️</div>
-        </div>
-        <div id="move-backward" class="dir-button">⬇️</div>
-    </div>
-    <div id="jump-button">JUMP</div>
-
+    <div id="container"></div>
+    <div id="orientation-message">Please rotate your device to landscape mode.</div>
+    <div id="joystick"></div>
+    <div id="jump-button">Jump</div>
     <script>
-        // === 1. Глобальные Переменные и Константы ===
+        // Check if mobile
+        const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+        if (!isMobile) {
+            document.body.innerHTML = '<h1>This game is only for mobile devices.</h1>';
+            throw new Error('Not mobile');
+        }
 
-        const BLOCK_SIZE = 1;
-        const CHUNK_SIZE = 16;
-        const RENDER_DISTANCE = 3; 
-        const WORLD_HEIGHT_MIN = 4;
-        const WORLD_HEIGHT_MAX = 15;
-        const WATER_LEVEL = 7;
-        const WORLD_HEIGHT_AVG = 10;
-        const MAX_JUMP_VELOCITY = 0.2;
-        const GRAVITY = -0.015;
-        const MOVE_SPEED = 0.05;
-        const ROTATION_SENSITIVITY = 0.005; // Чувствительность поворота
+        // Orientation check and lock
+        function checkOrientation() {
+            if (window.innerHeight > window.innerWidth) {
+                document.getElementById('orientation-message').style.display = 'block';
+                document.getElementById('container').style.display = 'none';
+            } else {
+                document.getElementById('orientation-message').style.display = 'none';
+                document.getElementById('container').style.display = 'block';
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(() => {});
+                }
+                initGame();
+            }
+        }
+        window.addEventListener('resize', checkOrientation);
+        checkOrientation();
 
-        let scene, camera, renderer;
-        let clock = new THREE.Clock();
-        let controlsEnabled = false;
-        let isMoving = { forward: false, backward: false, left: false, right: false, jump: false };
-        let playerVelocity = new THREE.Vector3();
-        let isGrounded = false;
-        let worldData = {}; 
-        let materials = {}; // Хранилище материалов
-
-        // Мультикасание
-        let activeTouches = {}; // { id: { startX, startY, type: 'move' | 'look' } }
-
-        // === 2. Материалы (Замена Текстур на Цвет) ===
-
-        function createMaterials() {
-            // Земля (коричнево-серая)
-            materials['earth'] = new THREE.MeshLambertMaterial({ color: 0x8b7d6b }); 
-            // Дерево (коричневый)
-            materials['wood'] = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); 
-            // Листья (зеленый)
-            materials['leaves'] = new THREE.MeshLambertMaterial({ color: 0x008000 }); 
-            // Вода (полупрозрачная синяя)
-            materials['water'] = new THREE.MeshPhongMaterial({ 
-                color: 0x4169e1, 
-                transparent: true, 
-                opacity: 0.6 
+        function initGame() {
+            // Fullscreen on tap
+            document.addEventListener('touchstart', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                }
             });
-        }
 
-        // === 3. Генерация Мира (Улучшенный Рандом) ===
-
-        /**
-         * Упрощенный "шум Перлина" на основе Math.sin и Math.random
-         * для более плавной, но рандомной генерации
-         */
-        function simpleNoise(x, z) {
-            // Комбинируем синус и рандом для создания "холмов"
-            const wave1 = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 0.5;
-            const wave2 = Math.sin(x * 0.05 + 10) * Math.cos(z * 0.05 + 20) * 0.5;
-            const randomFactor = Math.random() * 0.2 - 0.1; // Добавляем небольшую случайность
-            
-            const normalizedHeight = (wave1 + wave2) + randomFactor; 
-            
-            // Масштабируем и сдвигаем к средней высоте
-            const heightRange = WORLD_HEIGHT_MAX - WORLD_HEIGHT_MIN;
-            let height = Math.floor(normalizedHeight * (heightRange / 2) + WORLD_HEIGHT_AVG);
-
-            return Math.min(WORLD_HEIGHT_MAX, Math.max(WORLD_HEIGHT_MIN, height));
-        }
-
-        function getHeight(x, z) {
-            return simpleNoise(x, z);
-        }
-
-        /**
-         * Генерация одного чанка и добавление блоков в сцену.
-         */
-        function generateChunk(chunkX, chunkZ) {
-            const chunkKey = `${chunkX},${chunkZ}`;
-            if (worldData[chunkKey]) return;
-
-            const chunkGroup = new THREE.Group();
-            chunkGroup.position.set(chunkX * CHUNK_SIZE * BLOCK_SIZE, 0, chunkZ * CHUNK_SIZE * BLOCK_SIZE);
-
-            for (let x = 0; x < CHUNK_SIZE; x++) {
-                for (let z = 0; z < CHUNK_SIZE; z++) {
-                    const worldX = chunkX * CHUNK_SIZE + x;
-                    const worldZ = chunkZ * CHUNK_SIZE + z;
-                    const height = getHeight(worldX, worldZ);
-
-                    for (let y = 0; y < WORLD_HEIGHT_MAX; y++) {
-                        let materialKey = null;
-
-                        if (y < height) {
-                            if (y === height - 1) {
-                                // Поверхностный блок
-                                materialKey = (height <= WATER_LEVEL) ? 'water' : 'earth';
-                            } else {
-                                // Подземные блоки
-                                materialKey = 'earth';
-                            }
-                        } else if (y < WATER_LEVEL && y >= height) {
-                            // Вода над уровнем земли
-                            materialKey = 'water';
-                        }
-
-                        if (materialKey) {
-                            addBlock(chunkGroup, x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE, materialKey);
-                        }
-
-                        // Простая генерация дерева (шанс 3% на суше)
-                        if (y === height && materialKey === 'earth' && Math.random() < 0.03) {
-                            generateTree(chunkGroup, x, y, z);
-                        }
-                    }
-                }
-            }
-            scene.add(chunkGroup);
-            worldData[chunkKey] = chunkGroup;
-        }
-
-        /**
-         * Добавление одного куба в группу чанка.
-         */
-        function addBlock(group, x, y, z, materialKey) {
-            const geometry = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-            const material = materials[materialKey]; 
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(x + BLOCK_SIZE / 2, y + BLOCK_SIZE / 2, z + BLOCK_SIZE / 2);
-            group.add(mesh);
-        }
-
-        /**
-         * Генерация простого дерева (3 блока ствола, 3x3x3 кроны)
-         */
-        function generateTree(group, x, y, z) {
-            const trunkHeight = 3;
-            const crownYStart = y + trunkHeight;
-
-            // Ствол
-            for (let i = 0; i < trunkHeight; i++) {
-                addBlock(group, x * BLOCK_SIZE, (y + i) * BLOCK_SIZE, z * BLOCK_SIZE, 'wood');
-            }
-
-            // Крона (куб 3x3x3)
-            for (let dx = -1; dx <= 1; dx++) {
-                for (let dy = 0; dy <= 2; dy++) {
-                    for (let dz = -1; dz <= 1; dz++) {
-                        // Оптимизация: не ставим блоки в некоторых углах
-                        if (dx === 0 && dy === 0 && dz === 0) continue; 
-                        addBlock(group, (x + dx) * BLOCK_SIZE, (crownYStart + dy) * BLOCK_SIZE, (z + dz) * BLOCK_SIZE, 'leaves');
-                    }
-                }
-            }
-        }
-
-        /**
-         * Генерация стартовых 3x3 чанков
-         */
-        function generateInitialWorld() {
-            for (let cx = -1; cx <= 1; cx++) {
-                for (let cz = -1; cz <= 1; cz++) {
-                    generateChunk(cx, cz);
-                }
-            }
-        }
-
-        // === 4. Инициализация Сцены и Рендеринга ===
-
-        function init() {
-            if (scene) return;
-
-            createMaterials(); // Создаем цветные материалы
-
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB); // Голубое небо
-
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(
-                0.5 * BLOCK_SIZE, 
-                WORLD_HEIGHT_AVG * BLOCK_SIZE + 2 * BLOCK_SIZE, 
-                0.5 * BLOCK_SIZE 
-            );
-
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            // Добавляем прозрачность для воды
-            renderer.setClearColor(0x000000, 0); 
-            document.body.appendChild(renderer.domElement);
-
-            const ambientLight = new THREE.AmbientLight(0x404040, 5);
-            scene.add(ambientLight);
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-            directionalLight.position.set(1, 1, 0).normalize();
-            scene.add(directionalLight);
-
-            // Генерация мира
-            generateInitialWorld();
-            animate();
-            controlsEnabled = true;
-
-            // Явно показываем элементы управления
-            document.getElementById('controls').style.display = 'block';
-            document.getElementById('jump-button').style.display = 'block';
-        }
-
-        // === 5. Управление Игроком и Логика Игры (Без изменений) ===
-        // ... (handleMovement и checkCollision оставлены прежними)
-
-        function checkCollision() {
-            const playerX = Math.floor(camera.position.x / BLOCK_SIZE);
-            const playerZ = Math.floor(camera.position.z / BLOCK_SIZE);
-            
-            const groundHeight = getHeight(playerX, playerZ);
-            const targetY = groundHeight * BLOCK_SIZE + BLOCK_SIZE; // Позиция ног на поверхности
-
-            isGrounded = camera.position.y <= targetY + 0.05;
-
-            if (isGrounded && playerVelocity.y <= 0) {
-                camera.position.y = targetY;
-                playerVelocity.y = 0;
-            }
-        }
-
-        function handleMovement(delta) {
-            playerVelocity.y += GRAVITY * delta * 60;
-
-            const direction = new THREE.Vector3();
-            camera.getWorldDirection(direction);
-            direction.y = 0;
-            direction.normalize();
-
-            const sideways = new THREE.Vector3().crossVectors(direction, camera.up);
-
-            playerVelocity.x = 0;
-            playerVelocity.z = 0;
-
-            if (isMoving.forward) {
-                playerVelocity.x += direction.x * MOVE_SPEED * delta * 60;
-                playerVelocity.z += direction.z * MOVE_SPEED * delta * 60;
-            }
-            if (isMoving.backward) {
-                playerVelocity.x -= direction.x * MOVE_SPEED * delta * 60;
-                playerVelocity.z -= direction.z * MOVE_SPEED * delta * 60;
-            }
-            if (isMoving.left) {
-                playerVelocity.x -= sideways.x * MOVE_SPEED * delta * 60;
-                playerVelocity.z -= sideways.z * MOVE_SPEED * delta * 60;
-            }
-            if (isMoving.right) {
-                playerVelocity.x += sideways.x * MOVE_SPEED * delta * 60;
-                playerVelocity.z += sideways.z * MOVE_SPEED * delta * 60;
-            }
-
-            if (isMoving.jump && isGrounded) {
-                playerVelocity.y = MAX_JUMP_VELOCITY;
-                isGrounded = false;
-            }
-
-            camera.position.add(playerVelocity);
-            checkCollision();
-        }
-
-        // === 6. Главный Цикл Игры (Animate) ===
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            if (controlsEnabled) {
-                const delta = clock.getDelta();
-                handleMovement(delta);
-            }
-
-            renderer.render(scene, camera);
-        }
-
-        // === 7. Обработчики Событий ===
-
-        // === 7.1. Мобильная/ПК проверка и Запуск ===
-
-        function isMobile() {
-            return /Mobi|Android/i.test(navigator.userAgent);
-        }
-
-        function checkDeviceAndOrientation() {
-            const isPortrait = window.innerHeight > window.innerWidth;
-            const pcWarning = document.getElementById('pc-warning');
-            const orientationWarning = document.getElementById('orientation-warning');
-            const controls = document.getElementById('controls');
-            const jumpButton = document.getElementById('jump-button');
-
-            if (!isMobile()) {
-                pcWarning.style.display = 'block';
-                return;
-            } else {
-                pcWarning.style.display = 'none';
-            }
-
-            if (isPortrait) {
-                orientationWarning.style.display = 'block';
-                if (renderer) renderer.domElement.style.display = 'none';
-                controls.style.display = 'none';
-                jumpButton.style.display = 'none';
-                controlsEnabled = false; // Отключаем управление при неверной ориентации
-            } else {
-                orientationWarning.style.display = 'none';
-                if (renderer) renderer.domElement.style.display = 'block';
-                
-                if (!scene) {
-                    init();
-                } else {
-                    controlsEnabled = true; // Включаем управление обратно
-                }
-                
-                onWindowResize();
-            }
-        }
-
-        window.addEventListener('load', checkDeviceAndOrientation);
-        window.addEventListener('orientationchange', checkDeviceAndOrientation);
-        window.addEventListener('resize', checkDeviceAndOrientation);
-
-
-        function onWindowResize() {
-            if (!renderer) return;
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        // === 7.2. Полноэкранный режим и Запрет Масштабирования ===
-        
-        // Запрет масштабирования (уже в мета-теге и CSS touch-action: none)
-
-        function enterFullscreen() {
-            if (document.fullscreenElement) return;
-            const element = document.documentElement;
-            if (element.requestFullscreen) {
-                element.requestFullscreen();
-            } else if (element.webkitRequestFullscreen) {
-                element.webkitRequestFullscreen();
-            } else if (element.msRequestFullscreen) {
-                element.msRequestFullscreen();
-            }
-        }
-
-        // === 7.3. Мультикасание и Управление (Критические изменения) ===
-
-        function setupTouchControl(id, action) {
-            const element = document.getElementById(id);
-
-            element.addEventListener('touchstart', (e) => {
-                // Обрабатываем все активные пальцы на кнопке
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    const touch = e.changedTouches[i];
-                    // Добавляем касание в activeTouches, помечая его как 'move' (движение)
-                    activeTouches[touch.identifier] = { type: 'move', action: action };
-                    isMoving[action] = true;
-                }
-            }, { passive: false });
-
-            const releaseHandler = (e) => {
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    const id = e.changedTouches[i].identifier;
-                    if (activeTouches[id] && activeTouches[id].type === 'move') {
-                        // Проверяем, есть ли еще активные касания на эту же кнопку
-                        let stillActive = false;
-                        for (const key in activeTouches) {
-                            if (activeTouches[key].action === action && key !== id.toString()) {
-                                stillActive = true;
-                                break;
-                            }
-                        }
-                        if (!stillActive) {
-                            isMoving[action] = false;
-                        }
-                        delete activeTouches[id];
-                    }
-                }
+            // Textures URLs (Minecraft-like, public sources)
+            const textures = {
+                dirt: 'https://minecraft.wiki/images/Dirt_JE2_BE2.png?33185',
+                wood: 'https://minecraft.wiki/images/Oak_Log_%28UD%29_JE5_BE3.png?3d3c1',
+                leaves: 'https://minecraft.wiki/images/Oak_Leaves_JE4.png?2d3c2',
+                water: 'https://minecraft.wiki/images/Water_%28texture%29_JE1_BE1.png?6a3d4'
             };
 
-            element.addEventListener('touchend', releaseHandler, { passive: false });
-            element.addEventListener('touchcancel', releaseHandler, { passive: false });
-        }
+            // Preload textures to cache
+            Object.values(textures).forEach(url => {
+                const img = new Image();
+                img.src = url;
+            });
 
-        setupTouchControl('move-forward', 'forward');
-        setupTouchControl('move-backward', 'backward');
-        setupTouchControl('move-left', 'left');
-        setupTouchControl('move-right', 'right');
-        setupTouchControl('jump-button', 'jump');
+            // Three.js setup
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('container').appendChild(renderer.domElement);
 
-        // Обработка поворота (Look)
-        function onTouchStart(event) {
-            if (!controlsEnabled) return;
+            // Sky
+            scene.background = new THREE.Color(0x87CEEB); // Sky blue
 
-            for (let i = 0; i < event.changedTouches.length; i++) {
-                const touch = event.changedTouches[i];
-                // Игнорируем касания, которые попали на кнопки управления
-                if (touch.target.classList.contains('dir-button') || touch.target.id === 'jump-button' || touch.target.id === 'controls') {
-                    continue;
-                }
-                
-                // Добавляем касание как 'look' (поворот)
-                activeTouches[touch.identifier] = { 
-                    type: 'look', 
-                    startX: touch.clientX, 
-                    startY: touch.clientY,
-                    prevX: touch.clientX,
-                    prevY: touch.clientY
-                };
+            // World parameters
+            const chunkSize = 16;
+            const numChunks = 3;
+            const worldSize = chunkSize * numChunks;
+            const minHeight = 4;
+            const maxHeight = 15;
+            const avgHeight = 10;
+            const waterLevel = 7;
 
-                // Включаем полноэкранный режим при первом касании вне кнопок
-                enterFullscreen(); 
-            }
-        }
-
-        function onTouchMove(event) {
-            if (!controlsEnabled) return;
-
-            for (let i = 0; i < event.changedTouches.length; i++) {
-                const touch = event.changedTouches[i];
-                const touchState = activeTouches[touch.identifier];
-
-                if (touchState && touchState.type === 'look') {
-                    const deltaX = touch.clientX - touchState.prevX;
-                    const deltaY = touch.clientY - touchState.prevY;
-                    
-                    // Горизонтальное вращение (Yaw - вокруг оси Y)
-                    // camera.rotation.y напрямую (глобальное)
-                    camera.rotation.y -= deltaX * ROTATION_SENSITIVITY;
-
-                    // Вертикальное вращение (Pitch - вокруг оси X)
-                    // Ограничиваем, чтобы не "кувыркаться"
-                    let rotationX = camera.rotation.x + deltaY * ROTATION_SENSITIVITY;
-                    rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotationX)); 
-                    camera.rotation.x = rotationX;
-
-                    // Обновляем предыдущие координаты
-                    touchState.prevX = touch.clientX;
-                    touchState.prevY = touch.clientY;
+            // Generate world (simple random heightmap)
+            const world = new Array(worldSize).fill(0).map(() => new Array(worldSize).fill(0));
+            for (let x = 0; x < worldSize; x++) {
+                for (let z = 0; z < worldSize; z++) {
+                    // Simple height generation (not perlin, minimal)
+                    let height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+                    height = Math.round((height + avgHeight) / 2); // Bias towards average
+                    world[x][z] = height;
                 }
             }
-        }
 
-        function onTouchEnd(event) {
-            for (let i = 0; i < event.changedTouches.length; i++) {
-                delete activeTouches[event.changedTouches[i].identifier];
+            // Add lakes (randomly lower areas)
+            for (let i = 0; i < 5; i++) { // Rare lakes
+                const lakeX = Math.floor(Math.random() * worldSize);
+                const lakeZ = Math.floor(Math.random() * worldSize);
+                const lakeSize = Math.floor(Math.random() * 5) + 3;
+                for (let dx = -lakeSize; dx <= lakeSize; dx++) {
+                    for (let dz = -lakeSize; dz <= lakeSize; dz++) {
+                        const tx = lakeX + dx;
+                        const tz = lakeZ + dz;
+                        if (tx >= 0 && tx < worldSize && tz >= 0 && tz < worldSize) {
+                            world[tx][tz] = waterLevel - 1; // Below water
+                        }
+                    }
+                }
             }
+
+            // Build blocks
+            const blockSize = 1;
+            const loader = new THREE.TextureLoader();
+            const materials = {
+                dirt: new THREE.MeshBasicMaterial({ map: loader.load(textures.dirt) }),
+                wood: new THREE.MeshBasicMaterial({ map: loader.load(textures.wood) }),
+                leaves: new THREE.MeshBasicMaterial({ map: loader.load(textures.leaves) }),
+                water: new THREE.MeshBasicMaterial({ map: loader.load(textures.water), transparent: true, opacity: 0.7 })
+            };
+
+            for (let x = 0; x < worldSize; x++) {
+                for (let z = 0; z < worldSize; z++) {
+                    const height = world[x][z];
+                    for (let y = 0; y < height; y++) {
+                        const geometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
+                        const block = new THREE.Mesh(geometry, materials.dirt);
+                        block.position.set(x * blockSize, y * blockSize, z * blockSize);
+                        scene.add(block);
+                    }
+                    // Water if below level
+                    if (height < waterLevel) {
+                        const geometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
+                        const waterBlock = new THREE.Mesh(geometry, materials.water);
+                        waterBlock.position.set(x * blockSize, waterLevel * blockSize, z * blockSize);
+                        scene.add(waterBlock);
+                    }
+                }
+            }
+
+            // Add trees (randomly on land)
+            for (let i = 0; i < 20; i++) { // Some trees
+                const treeX = Math.floor(Math.random() * worldSize);
+                const treeZ = Math.floor(Math.random() * worldSize);
+                const baseHeight = world[treeX][treeZ];
+                if (baseHeight >= waterLevel) {
+                    // Trunk
+                    for (let y = baseHeight; y < baseHeight + 4; y++) {
+                        const geometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
+                        const trunk = new THREE.Mesh(geometry, materials.wood);
+                        trunk.position.set(treeX * blockSize, y * blockSize, treeZ * blockSize);
+                        scene.add(trunk);
+                    }
+                    // Leaves
+                    for (let dx = -1; dx <= 1; dx++) {
+                        for (let dz = -1; dz <= 1; dz++) {
+                            for (let dy = 3; dy <= 5; dy++) {
+                                if (Math.random() > 0.2) {
+                                    const geometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
+                                    const leaf = new THREE.Mesh(geometry, materials.leaves);
+                                    leaf.position.set((treeX + dx) * blockSize, (baseHeight + dy) * blockSize, (treeZ + dz) * blockSize);
+                                    scene.add(leaf);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Player position: center of first chunk? Assuming middle chunk center
+            const playerChunk = Math.floor(numChunks / 2);
+            camera.position.set((playerChunk * chunkSize + chunkSize / 2) * blockSize, avgHeight * blockSize + 2, (playerChunk * chunkSize + chunkSize / 2) * blockSize);
+
+            // Gyro for rotation
+            let alpha = 0, beta = 0, gamma = 0;
+            window.addEventListener('deviceorientation', (event) => {
+                alpha = event.alpha;
+                beta = event.beta;
+                gamma = event.gamma;
+            });
+
+            // Joystick controls
+            const moveSpeed = 0.1;
+            const jumpSpeed = 0.2;
+            let velocityY = 0;
+            const gravity = -0.005;
+            let isJumping = false;
+            let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+
+            const joystick = document.getElementById('joystick');
+            let joystickTouchId = null;
+            let joystickCenter = { x: joystick.offsetLeft + joystick.offsetWidth / 2, y: joystick.offsetTop + joystick.offsetHeight / 2 };
+            let direction = { x: 0, y: 0 };
+
+            joystick.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                joystickTouchId = touch.identifier;
+                updateDirection(touch);
+            });
+            joystick.addEventListener('touchmove', (e) => {
+                for (let touch of e.touches) {
+                    if (touch.identifier === joystickTouchId) {
+                        updateDirection(touch);
+                        break;
+                    }
+                }
+            });
+            joystick.addEventListener('touchend', () => {
+                joystickTouchId = null;
+                direction = { x: 0, y: 0 };
+                moveForward = moveBackward = moveLeft = moveRight = false;
+            });
+
+            function updateDirection(touch) {
+                const dx = touch.clientX - joystickCenter.x;
+                const dy = touch.clientY - joystickCenter.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > 50) {
+                    direction.x = dx / dist * 50;
+                    direction.y = dy / dist * 50;
+                } else {
+                    direction.x = dx;
+                    direction.y = dy;
+                }
+                // Map to directions
+                moveForward = direction.y < -20;
+                moveBackward = direction.y > 20;
+                moveLeft = direction.x < -20;
+                moveRight = direction.x > 20;
+            }
+
+            // Jump button
+            const jumpButton = document.getElementById('jump-button');
+            jumpButton.addEventListener('touchstart', () => {
+                if (!isJumping) {
+                    velocityY = jumpSpeed;
+                    isJumping = true;
+                }
+            });
+
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+
+                // Rotation from gyro
+                camera.rotation.order = 'YXZ';
+                camera.rotation.y = -gamma * Math.PI / 180; // Left-right
+                camera.rotation.x = beta * Math.PI / 180; // Up-down, but limit
+                camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+
+                // Movement
+                const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+                forward.y = 0;
+                forward.normalize();
+                const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+                right.y = 0;
+                right.normalize();
+
+                if (moveForward) camera.position.add(forward.multiplyScalar(moveSpeed));
+                if (moveBackward) camera.position.add(forward.multiplyScalar(-moveSpeed));
+                if (moveLeft) camera.position.add(right.multiplyScalar(-moveSpeed));
+                if (moveRight) camera.position.add(right.multiplyScalar(moveSpeed));
+
+                // Gravity and jump
+                velocityY += gravity;
+                camera.position.y += velocityY;
+                // Simple ground collision (assuming flat-ish, minimal no full collision)
+                const groundY = avgHeight * blockSize; // Approximate
+                if (camera.position.y < groundY + 1.5) {
+                    camera.position.y = groundY + 1.5;
+                    velocityY = 0;
+                    isJumping = false;
+                }
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
         }
-
-        // Прикрепляем слушатели к документу
-        document.addEventListener('touchstart', onTouchStart, { passive: false });
-        document.addEventListener('touchmove', onTouchMove, { passive: false });
-        document.addEventListener('touchend', onTouchEnd, { passive: false });
-        document.addEventListener('touchcancel', onTouchEnd, { passive: false });
-
-        checkDeviceAndOrientation();
     </script>
 </body>
 </html>
