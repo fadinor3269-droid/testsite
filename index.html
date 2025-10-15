@@ -2,606 +2,533 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вакансия Бариста - Кофейня</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Minecraft Lite Mobile</title>
     <style>
-        /* Стиль "под IOS" */
-        :root {
-            --ios-blue: #007AFF;
-            --ios-red: #FF3B30;
-            --ios-gray-bg: #F4F4F4;
-            --ios-light-gray-text: #8E8E93;
-            --ios-separator: #C6C6C8;
-            --ios-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-            --ios-input-bg: #FFFFFF;
-        }
-
-        body {
-            font-family: var(--ios-font);
-            margin: 0;
-            padding: 0;
-            background-color: var(--ios-gray-bg);
-            color: #1C1C1C;
-            line-height: 1.4;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px 15px;
-        }
-
-        /* Общие стили для секций */
-        .section {
-            background-color: #FFFFFF;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
-        }
-
-        /* Стиль для заголовка */
-        h1 {
-            font-size: 28px;
-            font-weight: 700;
-            margin-top: 0;
-            color: #000000;
-        }
-
-        h2 {
-            font-size: 20px;
-            font-weight: 600;
-            color: #000000;
-            margin-top: 25px;
-            margin-bottom: 10px;
-        }
-
-        /* Стиль для списков */
-        ul {
-            list-style: none;
-            padding: 0;
-            margin: 10px 0 20px 0;
-        }
-
-        li {
-            padding: 5px 0;
-            border-bottom: 1px solid var(--ios-separator);
-        }
-
-        li:last-child {
-            border-bottom: none;
-        }
-
-        /* Стиль для кнопки */
-        .primary-button {
-            display: block;
-            width: 100%;
-            padding: 15px 20px;
-            background-color: var(--ios-blue);
-            color: #FFFFFF;
-            border: none;
-            border-radius: 10px;
-            font-size: 17px;
-            font-weight: 600;
-            text-align: center;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            margin-top: 20px;
-        }
-
-        .primary-button:active {
-            background-color: #0056b3;
-        }
-        
-        /* Стиль для кнопки-заглушки */
-        .locked-button {
-            background-color: var(--ios-light-gray-text);
-            cursor: not-allowed;
-        }
-
-        /* Форма-опросник */
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            font-size: 15px;
-            color: #000000;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-
-        input[type="text"], textarea, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--ios-separator);
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 16px;
-            background-color: var(--ios-input-bg);
-            transition: border-color 0.2s;
-            -webkit-appearance: none;
-        }
-
-        input[type="text"]:focus, textarea:focus {
-            border-color: var(--ios-blue);
-            outline: none;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        /* Стиль для переключателей (Да/Нет) */
-        .radio-group {
-            display: flex;
-            gap: 10px;
-            background-color: #EFEFF4;
-            padding: 5px;
-            border-radius: 9px;
-        }
-        .radio-group label {
-            flex: 1;
-            text-align: center;
-            padding: 8px 0;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.2s, color 0.2s;
-            font-weight: 400;
-            font-size: 16px;
-            color: #000000;
-        }
-        .radio-group input[type="radio"] {
+        body { margin: 0; overflow: hidden; background-color: #00BFFF; }
+        canvas { display: block; }
+        #orientation-warning {
             display: none;
-        }
-        .radio-group input[type="radio"]:checked + label {
-            background-color: var(--ios-input-bg);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            font-weight: 600;
-        }
-
-        /* Секция с префиксом для контакта */
-        .contact-input-group {
-            display: flex;
-        }
-        .contact-prefix {
-            padding: 10px;
-            background-color: #EFEFF4;
-            border: 1px solid var(--ios-separator);
-            border-right: none;
-            border-top-left-radius: 6px;
-            border-bottom-left-radius: 6px;
-            font-size: 16px;
-            color: var(--ios-light-gray-text);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 40px;
-        }
-        .contact-input-group input {
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
-            border-left: none;
-        }
-        .no-prefix input {
-            border-radius: 6px;
-            border-left: 1px solid var(--ios-separator);
-        }
-
-        /* Стиль для селекта */
-        select {
-            -moz-appearance: none;
-            -webkit-appearance: none;
-            appearance: none;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%238E8E93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            padding-right: 30px;
-        }
-
-        /* Секция 1 (Превью) */
-        #preview-section {
-            display: block;
-        }
-
-        /* Секция 2 (Форма) */
-        #form-section, #limit-reached-section {
-            display: none;
-        }
-        
-        /* Секция с ограничением */
-        #limit-reached-section {
-            background-color: #FFF0F0;
-            border: 1px solid var(--ios-red);
-            color: var(--ios-red);
-            text-align: center;
-            padding: 30px 20px;
-        }
-        #limit-reached-section h2 {
-            color: var(--ios-red);
-            font-size: 22px;
-            margin-top: 0;
-            margin-bottom: 15px;
-        }
-        #limit-reached-section p {
-            color: #1C1C1C;
-            line-height: 1.5;
-        }
-
-
-        /* Уведомление */
-        .notification {
             position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.85);
-            color: #FFFFFF;
-            padding: 10px 20px;
-            border-radius: 12px;
-            font-size: 15px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            text-align: center;
+            padding-top: 50vh;
+            font-size: 20px;
             z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
         }
+        #pc-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 0, 0, 0.9);
+            color: white;
+            text-align: center;
+            padding-top: 50vh;
+            font-size: 24px;
+            z-index: 1001;
+        }
+        /* Mobile Controls */
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 50;
+            display: none; /* Скрыты по умолчанию, пока игра не запущена */
+        }
+        #jump-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 50;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.5);
+            color: black;
+            font-size: 30px;
+            border: 2px solid white;
+            text-align: center;
+            line-height: 80px;
+            user-select: none;
+            display: none;
+        }
+        .dir-button {
+            width: 60px;
+            height: 60px;
+            margin: 5px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            text-align: center;
+            line-height: 60px;
+            font-size: 24px;
+            user-select: none;
+            display: inline-block;
+        }
+        #controls div {
+            text-align: center;
+        }
+        #controls #move-forward { margin-left: 75px; }
+        #controls #move-left { margin-right: 15px; }
+        #controls #move-backward { margin-left: 75px; }
 
-        .notification.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .required-asterisk {
-            color: var(--ios-blue);
-            font-weight: 700;
-        }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-
-    <div class="container">
-
-        <div id="preview-section" class="section">
-            <h1>Вакансия бариста в нашей кофейне!</h1>
-            <p>Приглашаем в нашу дружную команду энергичного и улыбчивого бариста, который любит кофе так же сильно, как мы! Стань частью атмосферного места, где каждый день наполнен ароматом свежесваренного кофе и улыбками гостей.</p>
-
-            <h2>Что мы предлагаем:</h2>
-            <ul>
-                <li><strong>График работы:</strong> с 8:00 до 16:00, 6 дней в неделю — идеально для тех, кто ценит стабильность и свободные вечера.</li>
-                <li><strong>Зарплата:</strong> фиксированная ставка + процент от кассы, чтобы твой труд всегда был щедро вознагражден.</li>
-                <li><strong>Премии и бонусы:</strong> дополнительные поощрения за отличную работу и вклад в успех кофейни.</li>
-                <li><strong>Оплачиваемый проезд:</strong> добирайся до работы и домой с комфортом за наш счёт.</li>
-                <li><strong>Тёплая атмосфера:</strong> дружелюбный коллектив, поддержка и возможность расти в профессии.</li>
-            </ul>
-
-            <h2>Что мы ждём от тебя:</h2>
-            <ul>
-                <li>Умение варить вкусный кофе и создавать уют для гостей.</li>
-                <li>Позитивный настрой и желание учиться новому.</li>
-                <li>Ответственность и любовь к своему делу.</li>
-            </ul>
-
-            <p>Если ты мечтаешь работать в месте, где ценят твою энергию и страсть к кофе, присоединяйся! Напиши нам или приходи на собеседование — мы ждём именно тебя!</p>
-
-            <button class="primary-button" onclick="showForm()">Связаться с менеджером</button>
-        </div>
-        
-        <div id="limit-reached-section" class="section">
-            <h2>⛔ Лимит заявок исчерпан</h2>
-            <p>Вы уже отправили максимальное количество заявок (2) с этого устройства. Это ограничение установлено для борьбы со спамом. Если вы считаете, что это ошибка, пожалуйста, свяжитесь с нами по контактам, указанным в описании вакансии.</p>
-        </div>
-
-
-        <div id="form-section" class="section">
-            <h2>Расскажите о себе</h2>
-            <p style="font-size: 14px; color: var(--ios-light-gray-text);">Заявок с этого устройства: <span id="submission-counter">0</span> из 2</p>
-            <form id="barista-form">
-                
-                <div class="form-group">
-                    <label for="name">Как к вам обращаться? <span class="required-asterisk">*</span></label>
-                    <input type="text" id="name" name="name" required placeholder="Имя и Фамилия">
-                </div>
-
-                <div class="form-group">
-                    <label>Есть ли опыт работы в этой или похожей сфере? <span class="required-asterisk">*</span></label>
-                    <div class="radio-group">
-                        <input type="radio" id="experience-yes" name="experience" value="Да" required onclick="toggleExperienceDetail(true)">
-                        <label for="experience-yes">Да</label>
-
-                        <input type="radio" id="experience-no" name="experience" value="Нет" required onclick="toggleExperienceDetail(false)">
-                        <label for="experience-no">Нет</label>
-                    </div>
-                </div>
-
-                <div class="form-group" id="experience-detail-group" style="display:none;">
-                    <label for="experience-detail">Какой опыт имеется? <span class="required-asterisk">*</span></label>
-                    <textarea id="experience-detail" name="experience-detail" placeholder="Опишите ваш опыт бариста, в общепите, или в сфере обслуживания"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="contact-method">Как с вами связаться? <span class="required-asterisk">*</span></label>
-                    <select id="contact-method" name="contact-method" required onchange="updateContactPrefix(this.value)">
-                        <option value="" disabled selected>Выберите способ связи</option>
-                        <option value="telegram">Telegram</option>
-                        <option value="instagram">Instagram</option>
-                        <option value="viber">Viber</option>
-                        <option value="phone">Номер телефона</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="contact-data">Ваши контактные данные <span class="required-asterisk">*</span></label>
-                    <div class="contact-input-group" id="contact-input-group">
-                        <span class="contact-prefix" id="contact-prefix" style="display: none;"></span>
-                        <input type="text" id="contact-data" name="contact-data" required placeholder="Ваш никнейм или номер">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="additional-info">Дополнительная информация (необязательно)</label>
-                    <textarea id="additional-info" name="additional-info" placeholder="Например, почему вы хотите работать у нас, или ваши пожелания по работе"></textarea>
-                </div>
-
-                <button type="submit" class="primary-button">Отправить заявку</button>
-            </form>
-        </div>
+    <div id="orientation-warning">
+        Пожалуйста, поверните ваше устройство горизонтально (ландшафтный режим).
+    </div>
+    <div id="pc-warning">
+        Игра предназначена только для мобильных устройств.
     </div>
 
-    <div class="notification" id="status-notification">Наш менеджер вскоре с вами свяжется</div>
+    <div id="controls">
+        <div id="move-forward" class="dir-button">⬆️</div>
+        <div>
+            <div id="move-left" class="dir-button">⬅️</div>
+            <div id="move-right" class="dir-button">➡️</div>
+        </div>
+        <div id="move-backward" class="dir-button">⬇️</div>
+    </div>
+    <div id="jump-button">JUMP</div>
 
     <script>
-        // Константы для Telegram API и ограничения
-        const BOT_TOKEN = '8081524419:AAGb74EUjZYRfNfWlhuAcm6CIUFkMx4_nTQ';
-        const CHAT_ID = '7304258589';
-        const SUBMISSION_KEY = 'barista_submission_count';
-        const MAX_SUBMISSIONS = 2;
+        // === 1. Глобальные Переменные и Константы ===
 
-        /**
-         * Переключает отображение секций: превью -> форма / лимит.
-         */
-        function showForm() {
-            const count = parseInt(localStorage.getItem(SUBMISSION_KEY) || '0', 10);
-            const previewSection = document.getElementById('preview-section');
-            const formSection = document.getElementById('form-section');
-            const limitSection = document.getElementById('limit-reached-section');
-            const counterElement = document.getElementById('submission-counter');
+        // Текстуры (ссылки)
+        const TEXTURES = {
+            'earth': 'https://i.imgur.com/gO0t2Gf.png',   // Земля (пример)
+            'wood': 'https://i.imgur.com/7w3k0oF.png',     // Дерево (пример)
+            'leaves': 'https://i.imgur.com/T0R0q6L.png',   // Листья (пример)
+            'water': 'https://i.imgur.com/8Q4n6zF.png',    // Вода (пример)
+        };
 
-            // Обновляем счетчик для показа в форме
-            if (counterElement) {
-                 counterElement.textContent = count;
-            }
+        const BLOCK_SIZE = 1;
+        const CHUNK_SIZE = 16; // Размер чанка 16x16
+        const RENDER_DISTANCE = 3; // 3x3 чанка
+        const WORLD_HEIGHT_MIN = 4;
+        const WORLD_HEIGHT_MAX = 15;
+        const WATER_LEVEL = 7;
+        const WORLD_HEIGHT_AVG = 10;
+        const MAX_JUMP_VELOCITY = 0.2;
+        const GRAVITY = -0.015;
+        const MOVE_SPEED = 0.05;
 
-            previewSection.style.display = 'none';
+        let scene, camera, renderer;
+        let clock = new THREE.Clock();
+        let controlsEnabled = false;
+        let isMoving = { forward: false, backward: false, left: false, right: false, jump: false };
+        let playerVelocity = new THREE.Vector3();
+        let isGrounded = false;
+        let worldData = {}; // Хранилище для сгенерированных блоков
+        let texturesLoaded = {};
 
-            if (count >= MAX_SUBMISSIONS) {
-                formSection.style.display = 'none';
-                limitSection.style.display = 'block';
-            } else {
-                formSection.style.display = 'block';
-                limitSection.style.display = 'none';
-            }
-            window.scrollTo(0, 0); // Прокрутка к началу формы/сообщения
-        }
+        // === 2. Загрузка Текстур ===
 
-        /**
-         * Показывает/скрывает поле "Какой опыт имеется?".
-         * @param {boolean} show - true для показа, false для скрытия.
-         */
-        function toggleExperienceDetail(show) {
-            const detailGroup = document.getElementById('experience-detail-group');
-            const detailInput = document.getElementById('experience-detail');
-            detailGroup.style.display = show ? 'block' : 'none';
-            detailInput.required = show; // Делаем поле обязательным, если опыт выбран "Да"
-        }
-
-        /**
-         * Обновляет префикс для контактных данных в зависимости от выбранного способа.
-         * @param {string} method - Выбранный способ связи.
-         */
-        function updateContactPrefix(method) {
-            const prefixSpan = document.getElementById('contact-prefix');
-            const dataInput = document.getElementById('contact-data');
-            const inputGroup = document.getElementById('contact-input-group');
-
-            let prefix = '';
-
-            switch (method) {
-                case 'telegram':
-                case 'instagram':
-                    prefix = '@';
-                    dataInput.placeholder = 'никнейм';
-                    break;
-                case 'viber':
-                case 'phone':
-                    prefix = '+380';
-                    dataInput.placeholder = 'XX XXX XX XX';
-                    break;
-                default:
-                    prefix = '';
-                    dataInput.placeholder = 'Ваш никнейм или номер';
-            }
-
-            prefixSpan.textContent = prefix;
-            prefixSpan.style.display = prefix ? 'flex' : 'none';
-
-            // Управление стилями для отображения префикса
-            if (prefix) {
-                inputGroup.classList.remove('no-prefix');
-                dataInput.style.borderTopLeftRadius = '0';
-                dataInput.style.borderBottomLeftRadius = '0';
-                dataInput.style.borderLeft = 'none';
-            } else {
-                inputGroup.classList.add('no-prefix');
-                dataInput.style.borderTopLeftRadius = '6px';
-                dataInput.style.borderBottomLeftRadius = '6px';
-                dataInput.style.borderLeft = '1px solid var(--ios-separator)';
-            }
-            
-            dataInput.value = ''; // Очистка поля при смене префикса
-        }
-
-        /**
-         * Показывает встроенное уведомление.
-         * @param {string} message - Текст уведомления.
-         */
-        function showNotification(message) {
-            const notification = document.getElementById('status-notification');
-            notification.textContent = message;
-            notification.classList.add('show');
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
-        }
-
-        /**
-         * Форматирует данные формы в сообщение для Telegram.
-         * @param {FormData} formData - Объект FormData с данными формы.
-         * @returns {string} - Отформатированный текст сообщения.
-         */
-        function formatTelegramMessage(formData) {
-            const name = formData.get('name');
-            const experience = formData.get('experience');
-            const experienceDetail = formData.get('experience-detail') || '---';
-            const contactMethod = formData.get('contact-method');
-            let contactData = formData.get('contact-data');
-            const additionalInfo = formData.get('additional-info') || '---';
-            
-            // Определяем префикс для форматирования сообщения
-            let prefix = '';
-            if (contactMethod === 'telegram' || contactMethod === 'instagram') {
-                prefix = '@';
-            } else if (contactMethod === 'viber' || contactMethod === 'phone') {
-                prefix = '+380';
-            }
-
-            // Добавляем префикс, если он отсутствует и не пустой
-            if (prefix && contactData && !contactData.startsWith(prefix)) {
-                 contactData = prefix + contactData;
-            }
-            
-            // Формирование текста
-            let text = `*НОВАЯ ЗАЯВКА НА ВАКАНСИЮ БАРИСТА* \n\n`;
-            text += `*Имя:* ${name}\n`;
-            
-            if (experience === 'Да') {
-                text += `*Опыт работы:* Есть\n`;
-                text += `--- ${experienceDetail}\n`;
-            } else {
-                text += `*Опыт работы:* Нет опыта в этой сфере\n`;
-            }
-
-            text += `*Связаться:* ${contactMethod.charAt(0).toUpperCase() + contactMethod.slice(1)}: ${contactData}\n`;
-            text += `*Доп инфо:* ${additionalInfo}`;
-
-            return text;
-        }
-
-        /**
-         * Обрабатывает отправку формы.
-         * @param {Event} event - Событие отправки формы.
-         */
-        async function handleSubmit(event) {
-            event.preventDefault(); // Предотвращаем стандартную отправку формы
-            
-            let count = parseInt(localStorage.getItem(SUBMISSION_KEY) || '0', 10);
-            
-            if (count >= MAX_SUBMISSIONS) {
-                showNotification("Превышен лимит заявок с этого устройства.");
-                return;
-            }
-
-            const form = event.target;
-            const formData = new FormData(form);
-
-            // Проверка обязательных полей
-            let isValid = true;
-            form.querySelectorAll('[required]').forEach(input => {
-                if (!input.value && input.type !== 'radio' && input.type !== 'checkbox') {
-                    isValid = false;
-                    input.style.borderColor = 'var(--ios-red)';
-                } else {
-                    input.style.borderColor = 'var(--ios-separator)';
-                }
-            });
-            
-            if (!isValid) {
-                showNotification("Пожалуйста, заполните все обязательные поля (*)");
-                return;
-            }
-            
-            // Блокируем кнопку на время отправки
-            const submitButton = form.querySelector('button[type="submit"]');
-            submitButton.disabled = true;
-            submitButton.textContent = 'Отправка...';
-
-            // Отправка данных
-            const messageText = formatTelegramMessage(formData);
-            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-
-            const data = new URLSearchParams({
-                chat_id: CHAT_ID,
-                text: messageText,
-                parse_mode: 'Markdown'
-            });
-
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: data
+        function loadTextures() {
+            const loader = new THREE.TextureLoader();
+            const promises = [];
+            for (const key in TEXTURES) {
+                const url = TEXTURES[key];
+                const promise = new Promise((resolve) => {
+                    loader.load(url, (texture) => {
+                        texture.magFilter = THREE.NearestFilter;
+                        texture.minFilter = THREE.NearestFilter;
+                        texturesLoaded[key] = new THREE.MeshLambertMaterial({ map: texture });
+                        resolve();
+                    });
                 });
+                promises.push(promise);
+            }
+            return Promise.all(promises);
+        }
 
-                const result = await response.json();
+        // === 3. Генерация Мира ===
 
-                if (result.ok) {
-                    // УСПЕХ: Увеличиваем счетчик и сохраняем
-                    count++;
-                    localStorage.setItem(SUBMISSION_KEY, count.toString());
+        /**
+         * Простая функция для генерации высоты с использованием шума
+         * (В реальной жизни используется Perlin Noise, здесь — простой рандом)
+         */
+        function getHeight(x, z) {
+            // Очень простая "генерация" высоты на основе рандома для минималок
+            const seed = (x * 1000 + z) % 100;
+            const randomHeight = Math.floor(Math.sin(seed) * (WORLD_HEIGHT_MAX - WORLD_HEIGHT_MIN) / 2) + WORLD_HEIGHT_AVG;
+            return Math.min(WORLD_HEIGHT_MAX, Math.max(WORLD_HEIGHT_MIN, randomHeight));
+        }
 
-                    showNotification("Наш менеджер вскоре с вами свяжется");
-                    
-                    // Сбрасываем форму и возвращаемся к превью
-                    form.reset(); 
-                    document.getElementById('experience-no').checked = true; // Сброс радиокнопки
-                    toggleExperienceDetail(false); 
-                    updateContactPrefix(''); // Сброс префикса
-                    
-                    document.getElementById('form-section').style.display = 'none'; 
-                    document.getElementById('preview-section').style.display = 'block';
-                    
-                } else {
-                    console.error('Ошибка Telegram API:', result);
-                    showNotification("Ошибка отправки! Попробуйте позже.");
+        /**
+         * Генерация одного чанка и добавление блоков в сцену.
+         */
+        function generateChunk(chunkX, chunkZ) {
+            const chunkKey = `${chunkX},${chunkZ}`;
+            if (worldData[chunkKey]) return; // Чанк уже сгенерирован
+
+            const chunkGroup = new THREE.Group();
+            chunkGroup.position.set(chunkX * CHUNK_SIZE * BLOCK_SIZE, 0, chunkZ * CHUNK_SIZE * BLOCK_SIZE);
+
+            for (let x = 0; x < CHUNK_SIZE; x++) {
+                for (let z = 0; z < CHUNK_SIZE; z++) {
+                    const worldX = chunkX * CHUNK_SIZE + x;
+                    const worldZ = chunkZ * CHUNK_SIZE + z;
+                    const height = getHeight(worldX, worldZ);
+
+                    for (let y = 0; y < WORLD_HEIGHT_MAX; y++) {
+                        let materialKey = null;
+
+                        if (y < height) {
+                            if (y === height - 1) {
+                                // Поверхностный блок (земля или вода)
+                                if (height <= WATER_LEVEL) {
+                                    materialKey = 'water';
+                                } else {
+                                    materialKey = 'earth';
+                                }
+                            } else if (y < height - 1) {
+                                // Подземные блоки (просто земля для минималок)
+                                materialKey = 'earth';
+                            }
+                        } else if (y < WATER_LEVEL && y >= height) {
+                            // Вода над уровнем земли
+                            materialKey = 'water';
+                        }
+
+                        if (materialKey) {
+                            addBlock(chunkGroup, x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE, materialKey);
+                        }
+
+                        // Простая генерация дерева (шанс 5% на поверхности)
+                        if (y === height && materialKey === 'earth' && Math.random() < 0.05) {
+                            generateTree(chunkGroup, x, y, z);
+                        }
+                    }
                 }
-            } catch (error) {
-                console.error('Ошибка сети:', error);
-                showNotification("Ошибка сети! Проверьте подключение.");
-            } finally {
-                // Возвращаем кнопку в исходное состояние
-                submitButton.disabled = false;
-                submitButton.textContent = 'Отправить заявку';
+            }
+            scene.add(chunkGroup);
+            worldData[chunkKey] = chunkGroup;
+        }
+
+        /**
+         * Добавление одного куба в группу чанка.
+         */
+        function addBlock(group, x, y, z, materialKey) {
+            const geometry = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            const material = texturesLoaded[materialKey] || new THREE.MeshBasicMaterial({ color: 0xcccccc }); // Fallback
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x + BLOCK_SIZE / 2, y + BLOCK_SIZE / 2, z + BLOCK_SIZE / 2);
+            group.add(mesh);
+        }
+
+        /**
+         * Генерация простого дерева (3 блока ствола, 3x3x3 кроны)
+         */
+        function generateTree(group, x, y, z) {
+            const trunkHeight = 3;
+            const crownYStart = y + trunkHeight;
+
+            // Ствол
+            for (let i = 0; i < trunkHeight; i++) {
+                addBlock(group, x * BLOCK_SIZE, (y + i) * BLOCK_SIZE, z * BLOCK_SIZE, 'wood');
+            }
+
+            // Крона (куб 3x3x3)
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dy = 0; dy <= 2; dy++) {
+                    for (let dz = -1; dz <= 1; dz++) {
+                        // Исключаем углы для более естественной формы, если нужно.
+                        // Пока сделаем простой куб для минималок
+                        addBlock(group, (x + dx) * BLOCK_SIZE, (crownYStart + dy) * BLOCK_SIZE, (z + dz) * BLOCK_SIZE, 'leaves');
+                    }
+                }
             }
         }
 
-        // Инициализация
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('barista-form').addEventListener('submit', handleSubmit);
-            // Устанавливаем начальное состояние
-            document.getElementById('experience-no').checked = true;
-            toggleExperienceDetail(false); 
-            updateContactPrefix(document.getElementById('contact-method').value); // Инициализация префикса
-            
-            // Обновляем счетчик при загрузке страницы
-            const count = parseInt(localStorage.getItem(SUBMISSION_KEY) || '0', 10);
-            if (document.getElementById('submission-counter')) {
-                 document.getElementById('submission-counter').textContent = count;
+        /**
+         * Генерация стартовых 3x3 чанков
+         */
+        function generateInitialWorld() {
+            for (let cx = -1; cx <= 1; cx++) {
+                for (let cz = -1; cz <= 1; cz++) {
+                    generateChunk(cx, cz);
+                }
             }
-        });
+        }
 
+        // === 4. Инициализация Сцены и Рендеринга ===
+
+        function init() {
+            // 1. Сцена
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB); // Голубое небо
+
+            // 2. Камера
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(
+                0.5 * BLOCK_SIZE, // Центр первого блока
+                WORLD_HEIGHT_AVG * BLOCK_SIZE + 2 * BLOCK_SIZE, // Средняя высота + 2 блока над землей
+                0.5 * BLOCK_SIZE // Центр первого блока
+            );
+
+            // 3. Рендерер
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // 4. Свет
+            const ambientLight = new THREE.AmbientLight(0x404040, 5); // Мягкий белый свет
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(1, 1, 0).normalize();
+            scene.add(directionalLight);
+
+            // 5. Загрузка и генерация
+            loadTextures().then(() => {
+                generateInitialWorld();
+                animate();
+                controlsEnabled = true;
+            });
+        }
+
+        // === 5. Управление Игроком и Логика Игры ===
+
+        /**
+         * Проверка коллизии игрока с блоками (очень упрощенно: только высота)
+         */
+        function checkCollision() {
+            const playerX = Math.floor(camera.position.x / BLOCK_SIZE);
+            const playerZ = Math.floor(camera.position.z / BLOCK_SIZE);
+            const chunkX = Math.floor(playerX / CHUNK_SIZE);
+            const chunkZ = Math.floor(playerZ / CHUNK_SIZE);
+            const localX = playerX % CHUNK_SIZE;
+            const localZ = playerZ % CHUNK_SIZE;
+
+            // В этом минималистичном примере мы не храним массив блоков в чанке,
+            // поэтому просто используем генератор для имитации высоты земли.
+            const groundHeight = getHeight(playerX, playerZ);
+            const targetY = groundHeight * BLOCK_SIZE + BLOCK_SIZE; // Позиция ног на поверхности
+
+            isGrounded = camera.position.y <= targetY + 0.05; // Небольшой допуск
+
+            if (isGrounded && playerVelocity.y <= 0) {
+                camera.position.y = targetY; // "Приземляем" игрока
+                playerVelocity.y = 0;
+            }
+        }
+
+        function handleMovement(delta) {
+            // Гравитация
+            playerVelocity.y += GRAVITY * delta * 60; // Умножаем на 60 для более стабильного движения
+
+            // Движение вперед/назад/влево/вправо
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction); // Получаем направление, куда смотрит камера
+            direction.y = 0; // Игнорируем вертикальную составляющую для движения по плоскости
+            direction.normalize();
+
+            const sideways = new THREE.Vector3().crossVectors(direction, camera.up);
+
+            // Сброс горизонтальных скоростей
+            playerVelocity.x = 0;
+            playerVelocity.z = 0;
+
+            if (isMoving.forward) {
+                playerVelocity.x += direction.x * MOVE_SPEED * delta * 60;
+                playerVelocity.z += direction.z * MOVE_SPEED * delta * 60;
+            }
+            if (isMoving.backward) {
+                playerVelocity.x -= direction.x * MOVE_SPEED * delta * 60;
+                playerVelocity.z -= direction.z * MOVE_SPEED * delta * 60;
+            }
+            if (isMoving.left) {
+                playerVelocity.x -= sideways.x * MOVE_SPEED * delta * 60;
+                playerVelocity.z -= sideways.z * MOVE_SPEED * delta * 60;
+            }
+            if (isMoving.right) {
+                playerVelocity.x += sideways.x * MOVE_SPEED * delta * 60;
+                playerVelocity.z += sideways.z * MOVE_SPEED * delta * 60;
+            }
+
+            // Прыжок
+            if (isMoving.jump && isGrounded) {
+                playerVelocity.y = MAX_JUMP_VELOCITY;
+                isGrounded = false;
+            }
+
+            // Применяем скорость к позиции
+            camera.position.add(playerVelocity);
+
+            // Проверка коллизий (ограничение высоты)
+            checkCollision();
+        }
+
+        // === 6. Главный Цикл Игры (Animate) ===
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (controlsEnabled) {
+                const delta = clock.getDelta();
+                handleMovement(delta);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // === 7. Обработчики Событий ===
+
+        // === 7.1. Мобильная/ПК проверка и Запуск ===
+
+        function isMobile() {
+            return /Mobi|Android/i.test(navigator.userAgent);
+        }
+
+        function checkDeviceAndOrientation() {
+            const isPortrait = window.innerHeight > window.innerWidth;
+            const pcWarning = document.getElementById('pc-warning');
+            const orientationWarning = document.getElementById('orientation-warning');
+            const controls = document.getElementById('controls');
+            const jumpButton = document.getElementById('jump-button');
+
+            if (!isMobile()) {
+                pcWarning.style.display = 'block';
+                return;
+            } else {
+                pcWarning.style.display = 'none';
+            }
+
+            if (isPortrait) {
+                orientationWarning.style.display = 'block';
+                renderer.domElement.style.display = 'none';
+                controls.style.display = 'none';
+                jumpButton.style.display = 'none';
+            } else {
+                orientationWarning.style.display = 'none';
+                renderer.domElement.style.display = 'block';
+                controls.style.display = 'block';
+                jumpButton.style.display = 'block';
+                if (!scene) {
+                    init();
+                }
+                onWindowResize(); // Обновление размера после скрытия предупреждения
+            }
+        }
+
+        // Запуск проверки при загрузке и изменении ориентации
+        window.addEventListener('load', checkDeviceAndOrientation);
+        window.addEventListener('orientationchange', checkDeviceAndOrientation);
+        window.addEventListener('resize', checkDeviceAndOrientation);
+
+        function onWindowResize() {
+            if (!renderer) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', onWindowResize);
+
+
+        // === 7.2. Полноэкранный режим по Тапу ===
+
+        function enterFullscreen() {
+            const element = document.documentElement;
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.mozRequestFullScreen) { // Firefox
+                element.mozRequestFullScreen();
+            } else if (element.webkitRequestFullscreen) { // Chrome, Safari and Opera
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) { // IE/Edge
+                element.msRequestFullscreen();
+            }
+        }
+
+        // Открытие в полноэкранном режиме при нажатии на экран игры
+        document.body.addEventListener('touchstart', (event) => {
+            // Проверяем, что игра запущена и это не нажатие на кнопку управления
+            if (controlsEnabled && !event.target.classList.contains('dir-button') && event.target.id !== 'jump-button') {
+                enterFullscreen();
+            }
+        }, { once: true });
+
+
+        // === 7.3. Обработка Управления (Джойстик) ===
+
+        // Функция-помощник для обработки событий тача
+        function setupTouchControl(id, action) {
+            const element = document.getElementById(id);
+
+            element.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                isMoving[action] = true;
+            }, false);
+
+            element.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                isMoving[action] = false;
+            }, false);
+        }
+
+        // Настройка всех кнопок
+        setupTouchControl('move-forward', 'forward');
+        setupTouchControl('move-backward', 'backward');
+        setupTouchControl('move-left', 'left');
+        setupTouchControl('move-right', 'right');
+        setupTouchControl('jump-button', 'jump');
+
+        // === 7.4. Вращение Камеры (Сенсор) ===
+
+        let startX = 0;
+        let startY = 0;
+        const ROTATION_SENSITIVITY = 0.005;
+
+        function onTouchStart(event) {
+            if (!controlsEnabled || event.touches.length !== 1) return;
+            // Игнорируем нажатия на кнопки управления
+            if (event.target.classList.contains('dir-button') || event.target.id === 'jump-button') return;
+
+            startX = event.touches[0].clientX;
+            startY = event.touches[0].clientY;
+            document.addEventListener('touchmove', onTouchMove, false);
+            document.addEventListener('touchend', onTouchEnd, false);
+        }
+
+        function onTouchMove(event) {
+            if (!controlsEnabled || event.touches.length !== 1) return;
+
+            const currentX = event.touches[0].clientX;
+            const currentY = event.touches[0].clientY;
+
+            const deltaX = currentX - startX;
+            const deltaY = currentY - startY;
+
+            // Горизонтальное вращение (Yaw)
+            camera.rotation.y -= deltaX * ROTATION_SENSITIVITY;
+
+            // Вертикальное вращение (Pitch)
+            // Ограничиваем вращение по X, чтобы не смотреть "под себя" или "за спину"
+            let rotationX = camera.rotation.x + deltaY * ROTATION_SENSITIVITY;
+            rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotationX)); // Ограничение до 90 градусов
+            camera.rotation.x = rotationX;
+
+            startX = currentX;
+            startY = currentY;
+        }
+
+        function onTouchEnd() {
+            document.removeEventListener('touchmove', onTouchMove);
+            document.removeEventListener('touchend', onTouchEnd);
+        }
+
+        document.addEventListener('touchstart', onTouchStart, false);
+
+        // Конец кода
     </script>
 </body>
 </html>
