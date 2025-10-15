@@ -1,201 +1,240 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D iPhone 17 Pro Max (Three.js)</title>
+    <title>3D Model of iPhone 17 Pro Max</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #f0f0f0; } /* Нейтральный фон */
+        body { margin: 0; }
         canvas { display: block; }
     </style>
 </head>
 <body>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
-            }
-        }
-    </script>
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-        // --- КОНСТАНТЫ ДИЗАЙНА ---
-        const IP_WIDTH = 1.6;
-        const IP_HEIGHT = 3.3;
-        const IP_DEPTH = 0.17;
-        const ORANGE_COLOR = 0xFF6600; // Морковный / Cosmic Orange
-        const SCREEN_BEZEL_THICKNESS = 0.05;
-
-        // ВНИМАНИЕ: Замените эту ссылку на прямую ссылку (URL) к вашему скриншоту из "Мира Танков"!
-        const SCREEN_TEXTURE_URL = 'https://picsum.photos/400/820?random=1'; // Используется заглушка, замените на скриншот WOT
-
-        // Инициализация сцены
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xf0f0f0); // Нейтральный фон
-
-        // Инициализация камеры
-        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0.5, 5);
-
-        // Инициализация рендерера
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-        // --- Элементы освещения ---
-
-        // Направленный свет для глянца и теней
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 3.5);
-        directionalLight.position.set(5, 10, 7.5);
-        directionalLight.castShadow = true;
-        directionalLight.shadow.mapSize.width = 2048;
-        directionalLight.shadow.mapSize.height = 2048;
-        directionalLight.shadow.camera.left = -5;
-        directionalLight.shadow.camera.right = 5;
-        directionalLight.shadow.camera.top = 5;
-        directionalLight.shadow.camera.bottom = -5;
-        scene.add(directionalLight);
-
-        // Мягкий рассеянный свет
-        const ambientLight = new THREE.AmbientLight(0x404040, 1.8);
-        scene.add(ambientLight);
-
-        // --- СОЗДАНИЕ МОДЕЛИ IPHONE 17 PRO MAX ---
-
-        // 1. Корпус (задняя панель + боковины)
-        const backMaterial = new THREE.MeshPhysicalMaterial({
-            color: new THREE.Color(ORANGE_COLOR),
-            metalness: 0.9, // Металлическая рамка
-            roughness: 0.1, // Глянец стекла / полированного металла
-            clearcoat: 1.0, // Высокий глянец
-            clearcoatRoughness: 0.05
-        });
-
-        // Основной корпус
-        const bodyGeometry = new THREE.BoxGeometry(IP_WIDTH, IP_HEIGHT, IP_DEPTH);
-        const iphoneBody = new THREE.Mesh(bodyGeometry, backMaterial);
-        iphoneBody.castShadow = true;
-        iphoneBody.receiveShadow = true;
-
-        // 2. Экран (само изображение)
-        const loader = new THREE.TextureLoader();
-        const screenTexture = loader.load(SCREEN_TEXTURE_URL);
-        screenTexture.colorSpace = THREE.SRGBColorSpace; // Цветовое пространство
-
-        const screenMaterial = new THREE.MeshBasicMaterial({ map: screenTexture });
-        const screenGeometry = new THREE.PlaneGeometry(
-            IP_WIDTH - SCREEN_BEZEL_THICKNESS * 2,
-            IP_HEIGHT - SCREEN_BEZEL_THICKNESS * 2
-        );
-        const iphoneScreen = new THREE.Mesh(screenGeometry, screenMaterial);
-
-        // Размещаем экран с небольшим смещением вперед (на поверхности корпуса)
-        iphoneScreen.position.z = IP_DEPTH / 2 + 0.001;
-        iphoneScreen.position.y = 0;
-
-        // 3. Передняя панель (стекло + рамки)
-        const glassMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0x000000,
-            metalness: 0.0,
-            roughness: 0.0,
-            transmission: 0.95, // Почти прозрачное стекло
-            thickness: 0.1, // Толщина для реалистичного преломления
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.0
-        });
-
-        const frontGlassGeometry = new THREE.BoxGeometry(IP_WIDTH, IP_HEIGHT, 0.01);
-        const iphoneGlass = new THREE.Mesh(frontGlassGeometry, glassMaterial);
-        iphoneGlass.position.z = IP_DEPTH / 2 + 0.005;
-
-        // 4. Блок камер (по концепту iPhone 17 Pro Max - массивный горизонтальный блок)
-        const cameraBlockMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.2 });
-        const CAM_BLOCK_HEIGHT = 0.5;
-        const CAM_BLOCK_DEPTH = IP_DEPTH / 2 + 0.02; // Выступает
-        const camBlockGeometry = new THREE.BoxGeometry(IP_WIDTH, CAM_BLOCK_HEIGHT, CAM_BLOCK_DEPTH);
-
-        const camBlock = new THREE.Mesh(camBlockGeometry, cameraBlockMaterial);
-        camBlock.position.y = IP_HEIGHT / 2 - CAM_BLOCK_HEIGHT / 2;
-        camBlock.position.z = -IP_DEPTH / 2 - CAM_BLOCK_DEPTH / 2 + 0.005; // Сзади
-        camBlock.castShadow = true;
-
-        // 5. Линзы камер (три основные линзы)
-        const lensMaterial = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, metalness: 1.0, roughness: 0.0 });
-        const lensGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.03, 16);
-
-        // Создаем группу для всего iPhone
-        const iphoneGroup = new THREE.Group();
-        iphoneGroup.add(iphoneBody, iphoneScreen, iphoneGlass, camBlock);
-
-        // Расположение линз на блоке камеры
-        const lensZ = camBlock.position.z + camBlock.geometry.parameters.depth / 2 + 0.005;
-        const lensY = camBlock.position.y;
-        
-        // Линза 1 (слева)
-        const lens1 = new THREE.Mesh(lensGeometry, lensMaterial);
-        lens1.rotation.x = Math.PI / 2;
-        lens1.position.set(-0.4, lensY, lensZ);
-        iphoneGroup.add(lens1);
-
-        // Линза 2 (центр)
-        const lens2 = new THREE.Mesh(lensGeometry, lensMaterial);
-        lens2.rotation.x = Math.PI / 2;
-        lens2.position.set(0, lensY, lensZ);
-        iphoneGroup.add(lens2);
-
-        // Линза 3 (справа)
-        const lens3 = new THREE.Mesh(lensGeometry, lensMaterial);
-        lens3.rotation.x = Math.PI / 2;
-        lens3.position.set(0.4, lensY, lensZ);
-        iphoneGroup.add(lens3);
-
-        // Добавляем всю группу iPhone на сцену
-        iphoneGroup.rotation.y = Math.PI / 6; // Начальный поворот для лучшего обзора
-        scene.add(iphoneGroup);
-
-
-        // --- Поверхность (Пол) ---
-        const planeGeometry = new THREE.PlaneGeometry(10, 10);
-        const planeMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+        // Neutral surface (gray plane)
+        const planeGeometry = new THREE.PlaneGeometry(500, 500);
+        const planeMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, side: THREE.DoubleSide });
         const plane = new THREE.Mesh(planeGeometry, planeMaterial);
         plane.rotation.x = -Math.PI / 2;
-        plane.position.y = -IP_HEIGHT / 2; // Устанавливаем пол под моделью
-        plane.receiveShadow = true;
+        plane.position.y = -50; // Slightly below the iPhone
         scene.add(plane);
 
+        // Simple lighting from above
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(0, 200, 0);
+        scene.add(directionalLight);
 
-        // --- Управление камерой (OrbitControls) ---
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.target.set(0, 0, 0);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.minDistance = 3;
-        controls.maxDistance = 10;
-        controls.update();
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+        scene.add(ambientLight);
 
-        // --- Цикл анимации ---
+        // iPhone 17 Pro Max model group
+        const iphoneGroup = new THREE.Group();
+
+        // Dimensions in mm (scaled by 0.1 for better view, but keeping 1:1 for detail)
+        const scale = 0.1; // Scale down for visibility in scene
+        const width = 78 * scale;
+        const height = 163.4 * scale;
+        const depth = 8.75 * scale;
+        const cornerRadius = 10 * scale; // Approximate corner radius
+
+        // Body: Extruded rounded rectangle for the frame (aluminum)
+        const bodyShape = new THREE.Shape();
+        bodyShape.moveTo(cornerRadius, 0);
+        bodyShape.lineTo(width - cornerRadius, 0);
+        bodyShape.quadraticCurveTo(width, 0, width, cornerRadius);
+        bodyShape.lineTo(width, height - cornerRadius);
+        bodyShape.quadraticCurveTo(width, height, width - cornerRadius, height);
+        bodyShape.lineTo(cornerRadius, height);
+        bodyShape.quadraticCurveTo(0, height, 0, height - cornerRadius);
+        bodyShape.lineTo(0, cornerRadius);
+        bodyShape.quadraticCurveTo(0, 0, cornerRadius, 0);
+
+        const extrudeSettings = {
+            steps: 2,
+            depth: depth,
+            bevelEnabled: true,
+            bevelThickness: 0.5 * scale,
+            bevelSize: 0.5 * scale,
+            bevelOffset: 0,
+            bevelSegments: 5
+        };
+
+        const bodyGeometry = new THREE.ExtrudeGeometry(bodyShape, extrudeSettings);
+        const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xC0C0C0, metalness: 0.8, roughness: 0.2 }); // Silver aluminum
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        iphoneGroup.add(body);
+
+        // Back glass (Ceramic Shield)
+        const backGeometry = new THREE.PlaneGeometry(width - 2 * scale, height - 2 * scale);
+        const backMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.1, metalness: 0 }); // Glossy white-ish
+        const back = new THREE.Mesh(backGeometry, backMaterial);
+        back.position.z = depth / 2 + 0.1 * scale; // Slightly raised
+        back.rotation.y = Math.PI; // Face back
+        iphoneGroup.add(back);
+
+        // Front screen (OLED display)
+        const screenWidth = width - 2 * scale; // Minimal bezel
+        const screenHeight = height - 2 * scale;
+        const screenGeometry = new THREE.PlaneGeometry(screenWidth, screenHeight, 32, 32);
+        // Load a texture for the screen (any picture, e.g., a landscape)
+        const textureLoader = new THREE.TextureLoader();
+        const screenTexture = textureLoader.load('https://picsum.photos/800/1600'); // Random image as wallpaper
+        const screenMaterial = new THREE.MeshBasicMaterial({ map: screenTexture });
+        const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+        screen.position.z = -depth / 2 - 0.1 * scale; // Front side
+        iphoneGroup.add(screen);
+
+        // Dynamic Island (pill-shaped cutout for front camera)
+        const islandWidth = 30 * scale;
+        const islandHeight = 10 * scale;
+        const islandShape = new THREE.Shape();
+        islandShape.moveTo(0, 0);
+        islandShape.absarc(islandWidth / 2, 0, islandHeight / 2, Math.PI / 2, 3 * Math.PI / 2, true);
+        islandShape.absarc(-islandWidth / 2, 0, islandHeight / 2, 3 * Math.PI / 2, Math.PI / 2, true);
+        const islandGeometry = new THREE.ExtrudeGeometry(islandShape, { depth: 0.1 * scale, bevelEnabled: false });
+        const islandMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 }); // Black cutout
+        const dynamicIsland = new THREE.Mesh(islandGeometry, islandMaterial);
+        dynamicIsland.position.set(0, height / 2 - islandHeight - 5 * scale, -depth / 2 - 0.05 * scale); // Top center
+        dynamicIsland.rotation.x = Math.PI / 2;
+        iphoneGroup.add(dynamicIsland);
+
+        // Front camera (small circle in Dynamic Island)
+        const frontCameraRadius = 2 * scale;
+        const frontCameraGeometry = new THREE.CircleGeometry(frontCameraRadius, 32);
+        const frontCameraMaterial = new THREE.MeshStandardMaterial({ color: 0x000000, metalness: 0.5 });
+        const frontCamera = new THREE.Mesh(frontCameraGeometry, frontCameraMaterial);
+        frontCamera.position.set(islandWidth / 4, height / 2 - islandHeight - 5 * scale, -depth / 2 - 0.2 * scale);
+        frontCamera.rotation.x = -Math.PI / 2;
+        iphoneGroup.add(frontCamera);
+
+        // Rear camera bump (square-ish, raised)
+        const bumpSize = 40 * scale;
+        const bumpHeight = 2 * scale;
+        const bumpGeometry = new THREE.BoxGeometry(bumpSize, bumpSize, bumpHeight);
+        const bumpMaterial = new THREE.MeshStandardMaterial({ color: 0xA9A9A9, metalness: 0.7 });
+        const cameraBump = new THREE.Mesh(bumpGeometry, bumpMaterial);
+        cameraBump.position.set(-width / 2 + bumpSize / 2 + 5 * scale, height / 2 - bumpSize / 2 - 5 * scale, depth / 2 + bumpHeight / 2);
+        iphoneGroup.add(cameraBump);
+
+        // Rear cameras: 3 lenses in triangle layout
+        const lensRadius = 5 * scale;
+        const lensMaterial = new THREE.MeshStandardMaterial({ color: 0x000000, metalness: 0.9, roughness: 0.1 });
+        
+        // Main camera
+        const mainLens = new THREE.CylinderGeometry(lensRadius, lensRadius, 0.5 * scale, 32);
+        const mainMesh = new THREE.Mesh(mainLens, lensMaterial);
+        mainMesh.position.set(-width / 2 + bumpSize / 2 + 5 * scale - bumpSize / 3, height / 2 - bumpSize / 2 - 5 * scale + bumpSize / 3, depth / 2 + bumpHeight + 0.25 * scale);
+        mainMesh.rotation.x = Math.PI / 2;
+        iphoneGroup.add(mainMesh);
+
+        // Ultra-wide
+        const ultraLens = new THREE.CylinderGeometry(lensRadius, lensRadius, 0.5 * scale, 32);
+        const ultraMesh = new THREE.Mesh(ultraLens, lensMaterial);
+        ultraMesh.position.set(-width / 2 + bumpSize / 2 + 5 * scale + bumpSize / 3, height / 2 - bumpSize / 2 - 5 * scale + bumpSize / 3, depth / 2 + bumpHeight + 0.25 * scale);
+        ultraMesh.rotation.x = Math.PI / 2;
+        iphoneGroup.add(ultraMesh);
+
+        // Telephoto
+        const teleLens = new THREE.CylinderGeometry(lensRadius, lensRadius, 0.5 * scale, 32);
+        const teleMesh = new THREE.Mesh(teleLens, lensMaterial);
+        teleMesh.position.set(-width / 2 + bumpSize / 2 + 5 * scale, height / 2 - bumpSize / 2 - 5 * scale - bumpSize / 3, depth / 2 + bumpHeight + 0.25 * scale);
+        teleMesh.rotation.x = Math.PI / 2;
+        iphoneGroup.add(teleMesh);
+
+        // Flash (small circle)
+        const flashRadius = 3 * scale;
+        const flashGeometry = new THREE.CircleGeometry(flashRadius, 32);
+        const flashMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, emissive: 0xFFFFFF, emissiveIntensity: 0.2 });
+        const flash = new THREE.Mesh(flashGeometry, flashMaterial);
+        flash.position.set(-width / 2 + bumpSize / 2 + 5 * scale + bumpSize / 3, height / 2 - bumpSize / 2 - 5 * scale - bumpSize / 3, depth / 2 + bumpHeight + 0.1 * scale);
+        flash.rotation.x = Math.PI / 2;
+        iphoneGroup.add(flash);
+
+        // LiDAR scanner (small dot)
+        const lidarRadius = 2 * scale;
+        const lidarGeometry = new THREE.CircleGeometry(lidarRadius, 32);
+        const lidarMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+        const lidar = new THREE.Mesh(lidarGeometry, lidarMaterial);
+        lidar.position.set(-width / 2 + bumpSize / 2 + 5 * scale - bumpSize / 3, height / 2 - bumpSize / 2 - 5 * scale - bumpSize / 3, depth / 2 + bumpHeight + 0.1 * scale);
+        lidar.rotation.x = Math.PI / 2;
+        iphoneGroup.add(lidar);
+
+        // Side buttons (approximate)
+        // Volume buttons on left
+        const buttonWidth = 3 * scale;
+        const buttonHeight = 10 * scale;
+        const buttonDepth = 0.5 * scale;
+        const volumeUpGeometry = new THREE.BoxGeometry(buttonWidth, buttonHeight, buttonDepth);
+        const buttonMaterial = new THREE.MeshStandardMaterial({ color: 0xA9A9A9 });
+        const volumeUp = new THREE.Mesh(volumeUpGeometry, buttonMaterial);
+        volumeUp.position.set(-width / 2 - buttonDepth / 2, 30 * scale, 0);
+        volumeUp.rotation.y = Math.PI / 2;
+        iphoneGroup.add(volumeUp);
+
+        const volumeDown = volumeUp.clone();
+        volumeDown.position.y = 10 * scale;
+        iphoneGroup.add(volumeDown);
+
+        // Action button below volume
+        const actionButton = volumeUp.clone();
+        actionButton.position.y = -10 * scale;
+        iphoneGroup.add(actionButton);
+
+        // Power/Side button on right
+        const powerButtonHeight = 30 * scale;
+        const powerGeometry = new THREE.BoxGeometry(buttonWidth, powerButtonHeight, buttonDepth);
+        const powerButton = new THREE.Mesh(powerGeometry, buttonMaterial);
+        powerButton.position.set(width / 2 + buttonDepth / 2, 40 * scale, 0);
+        powerButton.rotation.y = Math.PI / 2;
+        iphoneGroup.add(powerButton);
+
+        // Camera Control button below power? (assuming)
+        const cameraControl = volumeUp.clone();
+        cameraControl.position.set(width / 2 + buttonDepth / 2, 0, 0);
+        cameraControl.rotation.y = Math.PI / 2;
+        iphoneGroup.add(cameraControl);
+
+        // USB-C port bottom
+        const portWidth = 10 * scale;
+        const portHeight = 3 * scale;
+        const portGeometry = new THREE.BoxGeometry(portWidth, portHeight, 0.1 * scale);
+        const portMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+        const usbPort = new THREE.Mesh(portGeometry, portMaterial);
+        usbPort.position.set(0, -height / 2, 0);
+        usbPort.rotation.z = Math.PI / 2;
+        iphoneGroup.add(usbPort);
+
+        // Add iPhone group to scene
+        iphoneGroup.position.y = 0; // Above the plane
+        iphoneGroup.rotation.y = 0; // Facing front
+        scene.add(iphoneGroup);
+
+        // Camera position (in front)
+        camera.position.set(0, height / 2, 200 * scale);
+        camera.lookAt(0, 0, 0);
+
+        // Animation loop
         function animate() {
             requestAnimationFrame(animate);
-
-            controls.update();
-
+            iphoneGroup.rotation.y += 0.001; // Slow rotation for view
             renderer.render(scene, camera);
         }
-
         animate();
 
-        // Обработчик изменения размера окна
+        // Handle resize
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-        }, false);
+        });
     </script>
 </body>
 </html>
