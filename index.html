@@ -1,329 +1,164 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mini Minecraft-like Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Яблоко (Three.js)</title>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-        #container {
-            width: 100vw;
-            height: 100vh;
-        }
-        #orientation-message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            font-size: 20px;
-            color: white;
-            background: black;
-            padding: 20px;
-            display: none;
-        }
-        #joystick {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            width: 150px;
-            height: 150px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            touch-action: none;
-        }
-        #jump-button {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            text-align: center;
-            line-height: 80px;
-            font-size: 20px;
-            touch-action: none;
-        }
+        body { margin: 0; overflow: hidden; background-color: #f0f0f0; } /* Нейтральный фон */
+        canvas { display: block; }
     </style>
-    <script src="https://threejs.org/build/three.min.js"></script>
 </head>
 <body>
-    <div id="container"></div>
-    <div id="orientation-message">Please rotate your device to landscape mode.</div>
-    <div id="joystick"></div>
-    <div id="jump-button">Jump</div>
-    <script>
-        // Check if mobile
-        const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-        if (!isMobile) {
-            document.body.innerHTML = '<h1>This game is only for mobile devices.</h1>';
-            throw new Error('Not mobile');
-        }
-
-        // Orientation check and lock
-        function checkOrientation() {
-            if (window.innerHeight > window.innerWidth) {
-                document.getElementById('orientation-message').style.display = 'block';
-                document.getElementById('container').style.display = 'none';
-            } else {
-                document.getElementById('orientation-message').style.display = 'none';
-                document.getElementById('container').style.display = 'block';
-                if (screen.orientation && screen.orientation.lock) {
-                    screen.orientation.lock('landscape').catch(() => {});
-                }
-                initGame();
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
             }
         }
-        window.addEventListener('resize', checkOrientation);
-        checkOrientation();
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        function initGame() {
-            // Fullscreen on tap
-            document.addEventListener('touchstart', () => {
-                if (!document.fullscreenElement) {
-                    document.documentElement.requestFullscreen().catch(() => {});
-                }
-            });
+        // Инициализация сцены
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0); // Светло-серый/нейтральный фон
 
-            // Textures URLs (Minecraft-like, public sources)
-            const textures = {
-                dirt: 'https://minecraft.wiki/images/Dirt_JE2_BE2.png?33185',
-                wood: 'https://minecraft.wiki/images/Oak_Log_%28UD%29_JE5_BE3.png?3d3c1',
-                leaves: 'https://minecraft.wiki/images/Oak_Leaves_JE4.png?2d3c2',
-                water: 'https://minecraft.wiki/images/Water_%28texture%29_JE1_BE1.png?6a3d4'
-            };
+        // Инициализация камеры
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0.5, 3); // Камера смотрит на яблоко
 
-            // Preload textures to cache
-            Object.values(textures).forEach(url => {
-                const img = new Image();
-                img.src = url;
-            });
+        // Инициализация рендерера
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+        renderer.shadowMap.enabled = true; // Включаем тени
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-            // Three.js setup
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer();
+        // --- Элементы освещения ---
+
+        // Основной (направленный) свет для реалистичного освещения
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
+        directionalLight.position.set(5, 10, 7.5);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 1024;
+        directionalLight.shadow.mapSize.height = 1024;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 50;
+        directionalLight.shadow.camera.left = -5;
+        directionalLight.shadow.camera.right = 5;
+        directionalLight.shadow.camera.top = 5;
+        directionalLight.shadow.camera.bottom = -5;
+        scene.add(directionalLight);
+
+        // Мягкий рассеянный свет (Ambient Light)
+        const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+        scene.add(ambientLight);
+
+        // --- Создание модели ЯБЛОКА ---
+        
+        // 1. Геометрия (попытка создать форму, похожую на яблоко)
+        // Используем IcosahedronGeometry, затем деформируем её
+        const appleGeometry = new THREE.SphereGeometry(1, 32, 32);
+        
+        // Небольшая деформация, чтобы сделать форму менее идеальной и добавить углубление сверху
+        const positionAttribute = appleGeometry.getAttribute('position');
+        const count = positionAttribute.count;
+
+        for (let i = 0; i < count; i++) {
+            const vector = new THREE.Vector3().fromBufferAttribute(positionAttribute, i);
+            const radius = vector.length();
+            
+            // Немного сжимаем полюса (для углубления)
+            if (vector.y > 0.9 * radius) {
+                // Углубление сверху
+                vector.multiplyScalar(1 - (vector.y - 0.9 * radius) * 0.5);
+            } else if (vector.y < -0.9 * radius) {
+                 // Небольшое углубление снизу
+                vector.multiplyScalar(1 - (-0.9 * radius - vector.y) * 0.1);
+            }
+            
+            // Рандомная небольшая деформация для неидеальности (как у настоящего яблока)
+            const noise = (Math.random() - 0.5) * 0.05;
+            vector.multiplyScalar(1 + noise);
+
+            positionAttribute.setXYZ(i, vector.x, vector.y, vector.z);
+        }
+        appleGeometry.attributes.position.needsUpdate = true;
+        appleGeometry.computeVertexNormals();
+
+
+        // 2. Материал (высокое качество с глянцем)
+        const appleColor = new THREE.Color(0xdc143c); // Насыщенный красный цвет (Crimson)
+
+        const appleMaterial = new THREE.MeshPhysicalMaterial({
+            color: appleColor,
+            metalness: 0.1, // Немного металлического блеска (глянцевость)
+            roughness: 0.3, // Не сильно глянцевый, но отражает свет
+            clearcoat: 1.0, // Дополнительный слой лака/глянца
+            clearcoatRoughness: 0.1,
+            // Добавляем Subsurface Scattering для имитации полупрозрачности фрукта
+            // (только для примера, для полной работы нужен более сложный шейдер)
+            transparent: false,
+        });
+
+        const apple = new THREE.Mesh(appleGeometry, appleMaterial);
+        apple.position.y = 0;
+        apple.scale.set(1.5, 1.5, 1.5); // Увеличиваем размер
+        apple.castShadow = true;
+        apple.receiveShadow = true;
+        scene.add(apple);
+
+        // --- Добавление веточки (стебля) ---
+        const stemGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.5, 8);
+        const stemMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 }); // Коричневый
+        const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+        stem.position.set(0, 1.35, 0);
+        stem.castShadow = true;
+        stem.receiveShadow = true;
+        scene.add(stem);
+
+
+        // --- Поверхность (Плоскость) ---
+        const planeGeometry = new THREE.PlaneGeometry(10, 10);
+        const planeMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc }); // Светло-серый
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.rotation.x = -Math.PI / 2; // Поворот на 90 градусов, чтобы сделать его полом
+        plane.position.y = -1.5;
+        plane.receiveShadow = true;
+        scene.add(plane);
+
+
+        // --- Управление камерой (OrbitControls) ---
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 0, 0); // Фокус на центре сцены
+        controls.enableDamping = true; // Плавное вращение
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 2;
+        controls.maxDistance = 10;
+        controls.update();
+
+        // --- Цикл анимации ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Обновляем контролы для плавности
+            controls.update();
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Обработчик изменения размера окна
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            document.getElementById('container').appendChild(renderer.domElement);
-
-            // Sky
-            scene.background = new THREE.Color(0x87CEEB); // Sky blue
-
-            // World parameters
-            const chunkSize = 16;
-            const numChunks = 3;
-            const worldSize = chunkSize * numChunks;
-            const minHeight = 4;
-            const maxHeight = 15;
-            const avgHeight = 10;
-            const waterLevel = 7;
-
-            // Generate world (simple random heightmap)
-            const world = new Array(worldSize).fill(0).map(() => new Array(worldSize).fill(0));
-            for (let x = 0; x < worldSize; x++) {
-                for (let z = 0; z < worldSize; z++) {
-                    // Simple height generation (not perlin, minimal)
-                    let height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
-                    height = Math.round((height + avgHeight) / 2); // Bias towards average
-                    world[x][z] = height;
-                }
-            }
-
-            // Add lakes (randomly lower areas)
-            for (let i = 0; i < 5; i++) { // Rare lakes
-                const lakeX = Math.floor(Math.random() * worldSize);
-                const lakeZ = Math.floor(Math.random() * worldSize);
-                const lakeSize = Math.floor(Math.random() * 5) + 3;
-                for (let dx = -lakeSize; dx <= lakeSize; dx++) {
-                    for (let dz = -lakeSize; dz <= lakeSize; dz++) {
-                        const tx = lakeX + dx;
-                        const tz = lakeZ + dz;
-                        if (tx >= 0 && tx < worldSize && tz >= 0 && tz < worldSize) {
-                            world[tx][tz] = waterLevel - 1; // Below water
-                        }
-                    }
-                }
-            }
-
-            // Build blocks
-            const blockSize = 1;
-            const loader = new THREE.TextureLoader();
-            const materials = {
-                dirt: new THREE.MeshBasicMaterial({ map: loader.load(textures.dirt) }),
-                wood: new THREE.MeshBasicMaterial({ map: loader.load(textures.wood) }),
-                leaves: new THREE.MeshBasicMaterial({ map: loader.load(textures.leaves) }),
-                water: new THREE.MeshBasicMaterial({ map: loader.load(textures.water), transparent: true, opacity: 0.7 })
-            };
-
-            for (let x = 0; x < worldSize; x++) {
-                for (let z = 0; z < worldSize; z++) {
-                    const height = world[x][z];
-                    for (let y = 0; y < height; y++) {
-                        const geometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
-                        const block = new THREE.Mesh(geometry, materials.dirt);
-                        block.position.set(x * blockSize, y * blockSize, z * blockSize);
-                        scene.add(block);
-                    }
-                    // Water if below level
-                    if (height < waterLevel) {
-                        const geometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
-                        const waterBlock = new THREE.Mesh(geometry, materials.water);
-                        waterBlock.position.set(x * blockSize, waterLevel * blockSize, z * blockSize);
-                        scene.add(waterBlock);
-                    }
-                }
-            }
-
-            // Add trees (randomly on land)
-            for (let i = 0; i < 20; i++) { // Some trees
-                const treeX = Math.floor(Math.random() * worldSize);
-                const treeZ = Math.floor(Math.random() * worldSize);
-                const baseHeight = world[treeX][treeZ];
-                if (baseHeight >= waterLevel) {
-                    // Trunk
-                    for (let y = baseHeight; y < baseHeight + 4; y++) {
-                        const geometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
-                        const trunk = new THREE.Mesh(geometry, materials.wood);
-                        trunk.position.set(treeX * blockSize, y * blockSize, treeZ * blockSize);
-                        scene.add(trunk);
-                    }
-                    // Leaves
-                    for (let dx = -1; dx <= 1; dx++) {
-                        for (let dz = -1; dz <= 1; dz++) {
-                            for (let dy = 3; dy <= 5; dy++) {
-                                if (Math.random() > 0.2) {
-                                    const geometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
-                                    const leaf = new THREE.Mesh(geometry, materials.leaves);
-                                    leaf.position.set((treeX + dx) * blockSize, (baseHeight + dy) * blockSize, (treeZ + dz) * blockSize);
-                                    scene.add(leaf);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Player position: center of first chunk? Assuming middle chunk center
-            const playerChunk = Math.floor(numChunks / 2);
-            camera.position.set((playerChunk * chunkSize + chunkSize / 2) * blockSize, avgHeight * blockSize + 2, (playerChunk * chunkSize + chunkSize / 2) * blockSize);
-
-            // Gyro for rotation
-            let alpha = 0, beta = 0, gamma = 0;
-            window.addEventListener('deviceorientation', (event) => {
-                alpha = event.alpha;
-                beta = event.beta;
-                gamma = event.gamma;
-            });
-
-            // Joystick controls
-            const moveSpeed = 0.1;
-            const jumpSpeed = 0.2;
-            let velocityY = 0;
-            const gravity = -0.005;
-            let isJumping = false;
-            let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
-
-            const joystick = document.getElementById('joystick');
-            let joystickTouchId = null;
-            let joystickCenter = { x: joystick.offsetLeft + joystick.offsetWidth / 2, y: joystick.offsetTop + joystick.offsetHeight / 2 };
-            let direction = { x: 0, y: 0 };
-
-            joystick.addEventListener('touchstart', (e) => {
-                const touch = e.touches[0];
-                joystickTouchId = touch.identifier;
-                updateDirection(touch);
-            });
-            joystick.addEventListener('touchmove', (e) => {
-                for (let touch of e.touches) {
-                    if (touch.identifier === joystickTouchId) {
-                        updateDirection(touch);
-                        break;
-                    }
-                }
-            });
-            joystick.addEventListener('touchend', () => {
-                joystickTouchId = null;
-                direction = { x: 0, y: 0 };
-                moveForward = moveBackward = moveLeft = moveRight = false;
-            });
-
-            function updateDirection(touch) {
-                const dx = touch.clientX - joystickCenter.x;
-                const dy = touch.clientY - joystickCenter.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist > 50) {
-                    direction.x = dx / dist * 50;
-                    direction.y = dy / dist * 50;
-                } else {
-                    direction.x = dx;
-                    direction.y = dy;
-                }
-                // Map to directions
-                moveForward = direction.y < -20;
-                moveBackward = direction.y > 20;
-                moveLeft = direction.x < -20;
-                moveRight = direction.x > 20;
-            }
-
-            // Jump button
-            const jumpButton = document.getElementById('jump-button');
-            jumpButton.addEventListener('touchstart', () => {
-                if (!isJumping) {
-                    velocityY = jumpSpeed;
-                    isJumping = true;
-                }
-            });
-
-            // Animation loop
-            function animate() {
-                requestAnimationFrame(animate);
-
-                // Rotation from gyro
-                camera.rotation.order = 'YXZ';
-                camera.rotation.y = -gamma * Math.PI / 180; // Left-right
-                camera.rotation.x = beta * Math.PI / 180; // Up-down, but limit
-                camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
-
-                // Movement
-                const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-                forward.y = 0;
-                forward.normalize();
-                const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-                right.y = 0;
-                right.normalize();
-
-                if (moveForward) camera.position.add(forward.multiplyScalar(moveSpeed));
-                if (moveBackward) camera.position.add(forward.multiplyScalar(-moveSpeed));
-                if (moveLeft) camera.position.add(right.multiplyScalar(-moveSpeed));
-                if (moveRight) camera.position.add(right.multiplyScalar(moveSpeed));
-
-                // Gravity and jump
-                velocityY += gravity;
-                camera.position.y += velocityY;
-                // Simple ground collision (assuming flat-ish, minimal no full collision)
-                const groundY = avgHeight * blockSize; // Approximate
-                if (camera.position.y < groundY + 1.5) {
-                    camera.position.y = groundY + 1.5;
-                    velocityY = 0;
-                    isJumping = false;
-                }
-
-                renderer.render(scene, camera);
-            }
-            animate();
-
-            // Resize
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-        }
+        }, false);
     </script>
 </body>
 </html>
